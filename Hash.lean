@@ -6,6 +6,7 @@ Authors: Derek Sorensen
 module
 
 public import Hash.Init
+public import Hash.Construction.MerkleDamgard
 public import Hash.Prelude.Arith
 public import Hash.Prelude.Bits
 public import Hash.Prelude.BitsLemmas

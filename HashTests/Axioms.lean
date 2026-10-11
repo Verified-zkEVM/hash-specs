@@ -23,3 +23,6 @@ audit_axioms Hash.SHA2.K256_eq Hash.SHA2.K512_eq Hash.SHA2.initialHash256_eq
 -- SHA-2: the fast specification equals the reference [FIPS 180-4].
 audit_axioms Hash.SHA2.Equiv.hashWith_eq Hash.SHA2.sha224_eq Hash.SHA2.sha256_eq
   Hash.SHA2.sha384_eq Hash.SHA2.sha512_eq Hash.SHA2.sha512t224_eq Hash.SHA2.sha512t256_eq
+
+-- Constructions.
+audit_axioms Hash.MerkleDamgard.iterate_append

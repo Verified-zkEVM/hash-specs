@@ -5,6 +5,7 @@ Authors: Derek Sorensen
 -/
 module
 
+public import Hash.Construction.MerkleDamgard
 public import Hash.Prelude.Bits
 
 /-!
@@ -173,10 +174,10 @@ def initialHash (P : Params) : List (BitVec P.w) :=
   P.H0.map (BitVec.ofNat P.w)
 
 /-- The hash function: pad and parse the message, compress each block in turn starting from
-`H⁽⁰⁾`, and output the leftmost `digestBits` bits of the final hash value
-[FIPS 180-4, §6.2.2, §6.3, §6.4.2, §6.5–6.7]. -/
+`H⁽⁰⁾` (the Merkle–Damgård iteration), and output the leftmost `digestBits` bits of the final
+hash value [FIPS 180-4, §6.2.2, §6.3, §6.4.2, §6.5–6.7]. -/
 def hash (P : Params) (M : List Bool) : List Bool :=
-  let H := (parse P (pad P M)).foldl (compress P) (initialHash P)
+  let H := MerkleDamgard.iterate (compress P) (initialHash P) (parse P (pad P M))
   (H.flatMap fun h => natToBitsBE P.w h.toNat).take P.digestBits
 
 end Reference

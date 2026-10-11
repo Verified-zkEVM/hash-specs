@@ -292,7 +292,7 @@ theorem hashWith_eq {α : Type} [Fast.Word α] (P : Params) [LawfulWord α P.w]
     (Nat.div_mul_cancel (Nat.dvd_of_mod_eq_zero (size_pad P hw m))).symm
   have hBW : bb = 16 * (P.w / 8) := by
     simp only [hbb, Params.blockBits]; rcases hw with h | h <;> rw [h]
-  unfold Reference.hash Fast.hashWith
+  unfold Reference.hash MerkleDamgard.iterate Fast.hashWith
   simp only []
   rw [← bytesToBitsMSB_pad P hw, ← hp, parse_bytes P hw p.data.toList N (by simpa using hsize),
     List.foldl_map]
