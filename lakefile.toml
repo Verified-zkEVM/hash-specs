@@ -1,10 +1,72 @@
 name = "hash-specs"
 version = "0.1.0"
-defaultTargets = ["hash-specs"]
+defaultTargets = ["HashSpecs", "HashSpecsTests"]
+testDriver = "HashSpecsTests"
+lintDriver = "batteries/runLinter"
 
+# Linter options mirror CSLib's `lakefile.toml` (see ROADMAP.md §2.1), plus `autoImplicit = false`.
+# They are `weak.` so that files which do not import Mathlib (the Mathlib-free part of Layer 1)
+# do not fail on unknown options.
+[leanOptions]
+autoImplicit = false
+relaxedAutoImplicit = false
+pp.unicode.fun = true
+weak.linter.mathlibStandardSet = true
+weak.linter.flexible = true
+weak.linter.pythonStyle = false
+weak.linter.checkInitImports = false
+weak.linter.allScriptsDocumented = false
+weak.linter.unicodeLinter = false
+weak.linter.style.longFile = 1500
+
+# Mathlib comes first so that its dependency pins win over those of later requirements.
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.34.0"
+
+# Layer 2 only (`HashSpecsZK`). The toolchain matches CompPoly's, so its prebuilt release
+# oleans are used (ROADMAP.md §2.1).
+[[require]]
+name = "CompPoly"
+git = "https://github.com/Verified-zkEVM/CompPoly"
+rev = "v4.34.0-patch2"
+
+# Documentation only (`HashSpecsDocs`).
+[[require]]
+name = "verso"
+git = "https://github.com/leanprover/verso"
+rev = "v4.34.0"
+
+# Layer 1: the core specifications. Mathlib-only; see `scripts/check_layer_imports.py`.
 [[lean_lib]]
 name = "HashSpecs"
 
+# Layer 1 tests: small kernel-checked known-answer tests and properties (upstreamable).
+[[lean_lib]]
+name = "HashSpecsTests"
+globs = ["HashSpecsTests.+"]
+
+# Layer 2: CompPoly-backed fast field arithmetic for the ZK-friendly hashes (Phase 4).
+[[lean_lib]]
+name = "HashSpecsZK"
+
+# Layer 3: C-ABI entry points used by the Rust differential-testing harness.
+[[lean_lib]]
+name = "HashSpecsFFI"
+defaultFacets = ["static"]
+
+# Layer 3: runner for the full official known-answer test suites.
 [[lean_exe]]
-name = "hash-specs"
-root = "Main"
+name = "hash-specs-kat"
+root = "HashSpecsKAT.Main"
+
+# Layer 3: the Verso book.
+[[lean_lib]]
+name = "HashSpecsDocs"
+srcDir = "docs"
+
+[[lean_exe]]
+name = "hash-specs-docs"
+srcDir = "docs"
+root = "HashSpecsDocs.Main"

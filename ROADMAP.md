@@ -2,7 +2,7 @@
 
 *A canonical library of formal, executable hash-function specifications in Lean 4. Each spec is documented to paper quality and checked by differential testing against real-world implementations. It is built to be compatible with the [Verified-zkEVM](https://github.com/Verified-zkEVM) ecosystem (CompPoly, ArkLib, …), so that projects there can adopt it when the time is right. The first priority is for these to become the canonical hash specs across Verified-zkEVM. A secondary aim is that the core could, in principle, be upstreamed to [CSLib](https://github.com/leanprover/cslib).*
 
-Status: **plan only**, drafted 2026-10-11 and revised the same day (toolchain `v4.34.1`; org migration deferred; CSLib-upstreamable structure). See [`LIT-REVIEW.md`](LIT-REVIEW.md) for prior work.
+Status: drafted 2026-10-11 as a plan; implementation of Phases 0–3 started the same day. Toolchain `v4.34.0`, matching CompPoly (§2.1). See [`LIT-REVIEW.md`](LIT-REVIEW.md) for prior work.
 
 ---
 
@@ -54,10 +54,10 @@ External Lean specs to cite, and possibly bridge to later:
 
 | Component | Pin / fact |
 |---|---|
-| Lean | Latest stable release is **`v4.34.1`** (2026-09-24); `v4.35.0` is still at rc4. Mathlib has a `v4.34.1` tag. |
+| Lean | We use **`v4.34.0`**, matching CompPoly, so that CompPoly's prebuilt release oleans and the Mathlib cache both work. (Latest stable is `v4.34.1`; `v4.35.0` is at rc4.) |
 | CompPoly | Latest tag `v4.34.0-patch2` (no `v4.34.1` tag yet), `fixedToolchain := true`. Fields include BN254, BLS12-381/377, BabyBear (+Ext4), KoalaBear, Goldilocks, Mersenne31, Pasta, Secp256k1. Each field has `Basic` and `Fast` representations. |
 | ArkLib | Lean `v4.34.0` |
-| Verso | Tags `v4.34.0` and `v4.35.0-rc*`; no `v4.34.1` tag (check `main` or use `v4.34.0`) |
+| Verso | Tag `v4.34.0` matches our toolchain. |
 | Lean module system | The org uses `module` / `public section` / `@[expose]` throughout. |
 | CSLib | `leanprover/cslib`, Apache-2.0. Toolchain `v4.35.0-rc4` (it tracks Lean closely), Mathlib pinned to a commit, **no other direct dependencies**; adding dependencies is "managed carefully" (`DECISION_MAKING.md`). Has a `Cslib/Crypto/` area (`Primitives/PRG`, `Protocols/…`) whose README plans "a comprehensive library of primitives … together with their proofs of correctness". Conventions: every file imports `Cslib.Init`; module system; Mathlib style plus `CODESTYLE.md` (term-mode `def`s, readable proofs, no non-terminal `simp`, curated `grind` sets as API); `lake build --wfail`; `lake shake`; `mk_all`; root `references.bib`; PR titles `feat(...)`; AI-tool use must be disclosed in PRs; major developments discussed on Zulip first. |
 
@@ -66,15 +66,9 @@ External Lean specs to cite, and possibly bridge to later:
 ## 2. Architecture
 
 ### 2.1 Toolchain and packaging
-- **Toolchain:** `leanprover/lean4:v4.34.1`, the latest stable release, which is already in `lean-toolchain`. Move to `v4.35.0` once it is stable.
-  - **Friction to resolve in Phase 0.** CompPoly's newest tag is `v4.34.0-patch2`, with `fixedToolchain := true` and `require mathlib @ v4.34.0`. Consequences when used from a `v4.34.1` project:
-    - Its prebuilt release oleans are toolchain-specific and won't be used, so CompPoly builds from source.
-    - Unless we override it, its Mathlib pin (`v4.34.0`) would also build from source instead of coming from `lake exe cache get`.
-    - `lake update` may try to adopt CompPoly's fixed toolchain, so check that `lean-toolchain` is unchanged after updates.
-  - **Plan:** `require mathlib @ "v4.34.1"` at the root so the Mathlib cache works, and build CompPoly from source against it.
-    - If CompPoly breaks on `v4.34.1`, either use a CompPoly `main` commit that has moved past `v4.34.0`, or ask the CompPoly maintainers for a `v4.34.1` tag.
-    - Last resort: drop to `v4.34.0` until they bump.
-  - Thereafter, follow Lean stable releases and tag our releases per toolchain (`v4.34.1`, `v4.34.1-patch1`, …), as CompPoly does.
+- **Toolchain:** `leanprover/lean4:v4.34.0`, matching CompPoly's `v4.34.0-patch2` tag (which sets `fixedToolchain := true`), with Mathlib `v4.34.0`. With matching toolchains, CompPoly's prebuilt release oleans are fetched instead of built (about 7 seconds instead of an hour), and Mathlib comes from `lake exe cache get`.
+  - We first tried `v4.34.1`. It works, but CompPoly then has to be built from source, because oleans only load under the exact Lean version that built them. We moved to `v4.34.0` to keep fresh clones and CI fast.
+  - Thereafter, move in lockstep with CompPoly's toolchain bumps, and tag our releases per toolchain (`v4.34.0`, `v4.34.0-patch1`, …), as CompPoly does.
 - **Three layers, as separate Lake libraries in one package.** This is how one repo serves both Verified-zkEVM and a possible CSLib upstream:
 
   | Layer | Lake library | May depend on | Contents | Possible destination |
@@ -281,7 +275,7 @@ Each hash gets at least two oracles, chosen for independent code lineage. Many K
 Sizes are relative (S/M/L/XL), not calendar estimates. Each phase ends with explicit exit criteria. **Phase 1 is a deliberately complete vertical slice:** every later hash reuses its pipeline.
 
 ### Phase 0: Foundations (M)
-- Keep toolchain `v4.34.1`. Add Mathlib `v4.34.1`, CompPoly (resolving the friction described in §2.1), Verso, doc-gen4 and checkdecls.
+- Toolchain `v4.34.0` with Mathlib `v4.34.0`, CompPoly `v4.34.0-patch2` (prebuilt oleans) and Verso `v4.34.0` (§2.1).
 - Set up the three-library Lake structure from §2.1, with a CI check that Layer 1 imports nothing outside Mathlib.
 - `HashSpecs/Init.lean` mirroring `Cslib.Init`, CSLib's linter options, `mk_all`, `lake shake` and `lake lint` in CI. Record a zero-warning baseline and enforce it (`--wfail`).
 - A **CSLib-compatibility CI job** that builds Layer 1 against CSLib's current toolchain and Mathlib pin. It is non-blocking at first, and is there to surface drift early, not to force us onto release candidates.
@@ -412,7 +406,7 @@ Settled on 2026-10-11. These are the defaults proposed earlier, accepted, with d
 | Risk | Mitigation |
 |---|---|
 | Linking the Lean runtime into Rust (static linking, initialisation, threads) is fiddly across platforms. | Prove it out in Phase 0 on a trivial export. The subprocess protocol is always available as a fallback. |
-| Toolchain skew: we track the latest stable Lean (`v4.34.1`), but CompPoly is tagged at `v4.34.0` with `fixedToolchain`. | Override Mathlib at the root and build CompPoly from source (§2.1). Ask the CompPoly maintainers for matching tags. Fall back to their toolchain only if necessary. |
+| Toolchain drift: CompPoly sets `fixedToolchain`, so we move only when it does. | Track CompPoly's tags and bump in lockstep. If a needed Lean fix lands before CompPoly bumps, CompPoly can be built from source on a newer toolchain, as tried with `v4.34.1` (§2.1). |
 | `Equiv` proofs over many rounds or large states blow up `bv_decide` or elaboration. | Per-round lemmas plus induction. Avoid unfolding whole permutations. Never fall back to `native_decide` in the trust chain. |
 | Correlated oracles, for example XKCP-derived Keccak implementations, hide the same bug. | Record the lineage of each oracle and require one independent implementation per hash. Official KATs act as a third source. |
 | ZK hashes are underspecified: "Poseidon" names many incompatible variants. | Explicit instance naming, parameter provenance (repo and commit), and generating constants instead of pasting them. |
