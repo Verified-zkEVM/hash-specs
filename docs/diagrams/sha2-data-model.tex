@@ -1,0 +1,38 @@
+% The SHA-2 data model [FIPS 180-4, §2.1, §3.1]: a message is a sequence of bytes, each read
+% most significant bit first; a w-bit word is w/8 consecutive bytes in big-endian order.
+% Original drawing for the Hash library.
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\input{style}
+\begin{document}
+\begin{tikzpicture}
+  \def\bw{1.9}
+  % Four message bytes.
+  \foreach \b/\v [count=\i from 0] in {61/0x61,62/0x62,63/0x63,80/0x80} {
+    \node[input, minimum width=17mm] (B\i) at (\i*\bw, 0) {\texttt{\v}};
+  }
+  \node[anchor=east] at ($(B0.west)+(-0.25,0)$) {bytes};
+  % The bits of the first byte, most significant first.
+  \foreach \x [count=\j from 0] in {0,1,1,0,0,0,0,1} {
+    \node[reg, minimum width=4.5mm, minimum height=5mm, inner sep=0pt] (b\j)
+      at ($(B0.north west)+(0.3+\j*0.47,1.3)$) {\footnotesize\x};
+  }
+  \node[anchor=east] at ($(b0.west)+(-0.25,0)$) {bits};
+  \draw[wire] (B0.north) -- ($(b0.south)!0.5!(b7.south)$);
+  \node[anchor=west, font=\sffamily\footnotesize] at ($(b7.east)+(0.2,0)$)
+    {most significant bit first};
+  % The 32-bit word.
+  \node[reg, minimum width=4*\bw cm - 2mm, fill=hsorange!25] (W)
+    at ($(B0)!0.5!(B3)+(0,-2.2)$) {$W_0 = \mathtt{0x61626380}$};
+  \node[anchor=east] at ($(W.west)+(-0.25,0)$) {word};
+  \foreach \i in {0,1,2,3} {
+    \draw[wire] (B\i.south) .. controls +(0,-0.9) and +(0,0.6) .. ($(W.north west)!{(\i+0.5)/4}!(W.north east)$);
+  }
+  \node[anchor=north, font=\sffamily\footnotesize] at (W.south)
+    {big-endian: the first byte is the most significant};
+  \begin{scope}[on background layer]
+    \node[card, fit=(B0)(B3)(W)(b0), inner sep=10pt, xshift=-4mm, minimum width=9.6cm] {};
+  \end{scope}
+\end{tikzpicture}
+\end{document}
