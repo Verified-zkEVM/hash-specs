@@ -57,6 +57,10 @@ name = "HashFFI"
 defaultFacets = ["static"]
 
 # Layer 3: runner for the full official known-answer test suites.
+[[lean_lib]]
+name = "HashKAT"
+globs = ["HashKAT.+"]
+
 [[lean_exe]]
 name = "hash-kat"
 root = "HashKAT.Main"
