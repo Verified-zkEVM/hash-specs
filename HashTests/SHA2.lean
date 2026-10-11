@@ -50,4 +50,19 @@ example : (sha512t256 (ascii "abc")).toHex =
 example : (sha256 ByteArray.empty).toHex =
     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" := by decide +kernel
 
+/-! Streaming: the two-block NIST message hashed in uneven pieces. -/
+
+example : ((sha256Init.update (ascii "abcdbcdecdefdefgefghfghigh")).update
+      (ascii "ijhijkijkljklmklmnlmnomnopnopq") |>.finalize).toHex =
+    "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1" := by decide +kernel
+
+example : (((sha512Init.update (ascii "a")).update ByteArray.empty).update (ascii "bc")
+      |>.finalize).toHex = (sha512 (ascii "abc")).toHex := by decide +kernel
+
+/-- `n` copies of the byte `x`. -/
+def xs (n : Nat) : ByteArray := ⟨(List.replicate n (0x78 : UInt8)).toArray⟩
+
+example : ((((sha256Init.update (xs 10)).update (xs 70)).update (xs 50))
+      |>.finalize).toHex = (sha256 (xs 130)).toHex := by decide +kernel
+
 end HashTests.SHA2

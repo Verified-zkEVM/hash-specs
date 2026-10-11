@@ -7,6 +7,7 @@ module
 
 public import HashKAT.Rsp
 public import Hash.SHA2.API
+public import HashFFI.Export
 
 /-!
 # Known-answer test runner
@@ -36,17 +37,42 @@ structure TestFile where
   hash : ByteArray → ByteArray
   /-- How to run the file. -/
   kind : Kind
+  /-- Whether `hash` uses the streaming interface (for the report only). -/
+  streaming : Bool := false
 
 /-- The SHAVS short-message, long-message and Monte Carlo files of one SHA-2 variant. -/
 def shavs (name : String) (hash : ByteArray → ByteArray) : List TestFile :=
-  [⟨s!"nist-cavp-shs/{name}ShortMsg.rsp", hash, .messages⟩,
-   ⟨s!"nist-cavp-shs/{name}LongMsg.rsp", hash, .messages⟩,
-   ⟨s!"nist-cavp-shs/{name}Monte.rsp", hash, .shavsMonte⟩]
+  [⟨s!"nist-cavp-shs/{name}ShortMsg.rsp", hash, .messages, false⟩,
+   ⟨s!"nist-cavp-shs/{name}LongMsg.rsp", hash, .messages, false⟩,
+   ⟨s!"nist-cavp-shs/{name}Monte.rsp", hash, .shavsMonte, false⟩]
+
+/-- The piece-size patterns used to test streaming: single bytes, sizes around the block
+boundaries of both word sizes, and an empty update between pieces. -/
+def piecePatterns : List (List Nat) :=
+  [[1], [7, 0, 13], [63, 64, 65], [127, 128, 129], [3, 200]]
+
+/-- Hash `m` incrementally under every pattern of `piecePatterns`. The result is the common
+digest if all patterns agree, and the empty array (which matches no test vector) otherwise. -/
+def streamed {α : Type} [SHA2.Fast.Word α] (s : SHA2.Fast.State α) (m : ByteArray) :
+    ByteArray :=
+  let digests := piecePatterns.map (HashFFI.streamPieces s · m)
+  match digests with
+  | d :: ds => if ds.all (· == d) then d else ByteArray.empty
+  | [] => ByteArray.empty
+
+/-- The SHAVS short- and long-message files of one SHA-2 variant, hashed incrementally. -/
+def shavsStreamed {α : Type} [SHA2.Fast.Word α] (name : String) (s : SHA2.Fast.State α) :
+    List TestFile :=
+  [⟨s!"nist-cavp-shs/{name}ShortMsg.rsp", streamed s, .messages, true⟩,
+   ⟨s!"nist-cavp-shs/{name}LongMsg.rsp", streamed s, .messages, true⟩]
 
 /-- Every test file. -/
 def testFiles : List TestFile :=
   shavs "SHA224" sha224 ++ shavs "SHA256" sha256 ++ shavs "SHA384" sha384 ++
-  shavs "SHA512" sha512 ++ shavs "SHA512_224" sha512t224 ++ shavs "SHA512_256" sha512t256
+  shavs "SHA512" sha512 ++ shavs "SHA512_224" sha512t224 ++ shavs "SHA512_256" sha512t256 ++
+  shavsStreamed "SHA224" sha224Init ++ shavsStreamed "SHA256" sha256Init ++
+  shavsStreamed "SHA384" sha384Init ++ shavsStreamed "SHA512" sha512Init ++
+  shavsStreamed "SHA512_224" sha512t224Init ++ shavsStreamed "SHA512_256" sha512t256Init
 
 public def main : IO UInt32 := do
   let mut total := 0
@@ -59,7 +85,10 @@ public def main : IO UInt32 := do
     total := total + outcome.passed + outcome.failures.length
     failed := failed + outcome.failures.length
     let status := if outcome.failures.isEmpty then "ok" else "FAILED"
-    IO.println s!"{status}  {f.path}: {outcome.passed} passed, {outcome.failures.length} failed"
+    let mode := match f.kind with
+      | .messages => if f.streaming then " (streamed)" else ""
+      | .shavsMonte => ""
+    IO.println s!"{status}  {f.path}{mode}: {outcome.passed} passed, {outcome.failures.length} failed"
     for e in outcome.failures.take 5 do
       IO.println s!"        {e}"
   if failed == 0 then

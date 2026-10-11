@@ -56,6 +56,18 @@ proptest! {
     fn random_messages(m in proptest::collection::vec(any::<u8>(), 0..4096)) {
         check(&m);
     }
+
+    /// Streaming in random pieces gives the one-shot digest.
+    #[test]
+    fn streaming_matches_one_shot(
+        m in proptest::collection::vec(any::<u8>(), 0..1024),
+        pieces in proptest::collection::vec(0u16..300, 1..8),
+    ) {
+        for (v, variant) in variants().iter().zip(hash_lean::Sha2Variant::ALL) {
+            let streamed = hash_lean::sha2_stream(variant, &pieces, &m);
+            prop_assert_eq!(&streamed, &(v.rust_crypto)(&m), "{} streamed in {:?}", v.name, &pieces);
+        }
+    }
 }
 
 #[test]

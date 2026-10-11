@@ -23,6 +23,7 @@ extern "C" {
     fn hs_sha512(m: *mut lean_object) -> *mut lean_object;
     fn hs_sha512t224(m: *mut lean_object) -> *mut lean_object;
     fn hs_sha512t256(m: *mut lean_object) -> *mut lean_object;
+    fn hs_sha2_stream(input: *mut lean_object) -> *mut lean_object;
 }
 
 static INIT: Once = Once::new();
@@ -94,4 +95,51 @@ pub fn sha512_224(m: &[u8]) -> Vec<u8> {
 /// SHA-512/256, computed by the Lean fast specification.
 pub fn sha512_256(m: &[u8]) -> Vec<u8> {
     call(hs_sha512t256, m, 32)
+}
+
+/// A SHA-2 variant, for the streaming interface.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Sha2Variant {
+    Sha224 = 0,
+    Sha256 = 1,
+    Sha384 = 2,
+    Sha512 = 3,
+    Sha512_224 = 4,
+    Sha512_256 = 5,
+}
+
+impl Sha2Variant {
+    /// All variants.
+    pub const ALL: [Sha2Variant; 6] = [
+        Sha2Variant::Sha224,
+        Sha2Variant::Sha256,
+        Sha2Variant::Sha384,
+        Sha2Variant::Sha512,
+        Sha2Variant::Sha512_224,
+        Sha2Variant::Sha512_256,
+    ];
+
+    /// The digest length in bytes.
+    pub fn digest_len(self) -> usize {
+        match self {
+            Sha2Variant::Sha224 | Sha2Variant::Sha512_224 => 28,
+            Sha2Variant::Sha256 | Sha2Variant::Sha512_256 => 32,
+            Sha2Variant::Sha384 => 48,
+            Sha2Variant::Sha512 => 64,
+        }
+    }
+}
+
+/// Hash `m` with the Lean streaming interface, absorbing it in pieces whose sizes cycle through
+/// `pieces` (a size of 0 is an empty update; at most 255 sizes are used).
+pub fn sha2_stream(variant: Sha2Variant, pieces: &[u16], m: &[u8]) -> Vec<u8> {
+    let pieces = &pieces[..pieces.len().min(255)];
+    let mut input = Vec::with_capacity(2 + 2 * pieces.len() + m.len());
+    input.push(variant as u8);
+    input.push(pieces.len() as u8);
+    for p in pieces {
+        input.extend_from_slice(&p.to_be_bytes());
+    }
+    input.extend_from_slice(m);
+    call(hs_sha2_stream, &input, variant.digest_len())
 }
