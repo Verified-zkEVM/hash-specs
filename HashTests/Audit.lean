@@ -29,6 +29,8 @@ def allowedAxioms : List Name := [``propext, ``Classical.choice, ``Quot.sound]
 /-- `audit_axioms c₁ c₂ …` checks that each `cᵢ` depends only on the standard axioms. -/
 syntax (name := auditAxioms) "audit_axioms" (ppSpace ident)+ : command
 
+/-- Elaborate `audit_axioms`: collect each constant's axioms and fail on any outside
+`allowedAxioms`. -/
 @[command_elab auditAxioms]
 def elabAuditAxioms : CommandElab := fun stx => do
   for id in stx[1].getArgs do
