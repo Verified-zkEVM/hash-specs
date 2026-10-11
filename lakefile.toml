@@ -1,0 +1,10 @@
+name = "hash-specs"
+version = "0.1.0"
+defaultTargets = ["hash-specs"]
+
+[[lean_lib]]
+name = "HashSpecs"
+
+[[lean_exe]]
+name = "hash-specs"
+root = "Main"
