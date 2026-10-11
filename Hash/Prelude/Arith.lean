@@ -17,7 +17,7 @@ Mathlib-free.
 
 @[expose] public section
 
-namespace HashSpecs
+namespace Hash
 
 /-- Trial-division primality test. -/
 def isPrimeB (p : Nat) : Bool :=
@@ -45,4 +45,4 @@ def iroot (k n : Nat) : Nat :=
 def fracRootBits (k w p : Nat) : Nat :=
   iroot k (p * 2 ^ (k * w)) % 2 ^ w
 
-end HashSpecs
+end Hash

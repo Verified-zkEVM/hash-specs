@@ -5,8 +5,8 @@ Authors: Derek Sorensen
 -/
 module
 
-public import HashSpecs.SHA2.Constants
-public import HashSpecs.SHA2.Reference
+public import Hash.SHA2.Constants
+public import Hash.SHA2.Reference
 
 /-!
 # SHA-2: the members of the family
@@ -22,7 +22,7 @@ The parameters of SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224 and SHA-512/25
 
 @[expose] public section
 
-namespace HashSpecs.SHA2
+namespace Hash.SHA2
 
 /-- The rotation amounts shared by SHA-224 and SHA-256 [FIPS 180-4, (4.4)–(4.7)]. -/
 def params32 (H0 : List Nat) (digestBits : Nat) : Params where
@@ -75,4 +75,4 @@ def sha512tIV (name : List UInt8) : List Nat :=
   let P := params64 (H0_512.map (· ^^^ 0xa5a5a5a5a5a5a5a5)) 512
   (chunks 64 (Reference.hash P (bytesToBitsMSB name))).map bitsToNatBE
 
-end HashSpecs.SHA2
+end Hash.SHA2

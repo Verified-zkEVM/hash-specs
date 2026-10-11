@@ -5,7 +5,7 @@ Authors: Derek Sorensen
 -/
 module
 
-public import HashSpecs.Prelude.Arith
+public import Hash.Prelude.Arith
 
 /-!
 # SHA-2 constants
@@ -16,7 +16,7 @@ kernel computation (`decide +kernel`), so the tables are theorems rather than tr
 
 The initial hash values of SHA-512/224 and SHA-512/256 are defined by running SHA-512 with a
 modified initial value [FIPS 180-4, §5.3.6]; that derivation is checked in
-`HashSpecs.SHA2.Instances`.
+`Hash.SHA2.Instances`.
 
 ## References
 
@@ -26,7 +26,7 @@ modified initial value [FIPS 180-4, §5.3.6]; that derivation is checked in
 
 @[expose] public section
 
-namespace HashSpecs.SHA2
+namespace Hash.SHA2
 
 /-- The first 80 primes (the 80th prime is 409). -/
 def first80Primes : List Nat :=
@@ -131,4 +131,4 @@ through sixteenth primes, i.e. the low halves of `H0_384`. -/
 theorem H0_224_eq : H0_224 = ((first80Primes.drop 8).take 8).map (fun p => fracRootBits 2 64 p % 2 ^ 32) := by
   decide +kernel
 
-end HashSpecs.SHA2
+end Hash.SHA2

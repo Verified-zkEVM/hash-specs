@@ -5,7 +5,7 @@ Authors: Derek Sorensen
 -/
 module
 
-import HashSpecs.SHA2.API
+import Hash.SHA2.API
 
 /-!
 # SHA-2 known-answer tests (kernel-checked)
@@ -17,9 +17,9 @@ The examples are the one-block and two-block messages of the NIST examples
 (<https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines/example-values>).
 -/
 
-namespace HashSpecsTests.SHA2
+namespace HashTests.SHA2
 
-open HashSpecs
+open Hash
 
 /-- The bytes of a string literal known to be ASCII. -/
 def ascii (s : String) : ByteArray := ⟨(s.toList.map fun c => c.toNat.toUInt8).toArray⟩
@@ -50,4 +50,4 @@ example : (sha512_256 (ascii "abc")).toHex =
 example : (sha256 ByteArray.empty).toHex =
     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" := by decide +kernel
 
-end HashSpecsTests.SHA2
+end HashTests.SHA2

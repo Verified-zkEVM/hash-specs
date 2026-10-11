@@ -5,7 +5,7 @@ Authors: Derek Sorensen
 -/
 module
 
-public import HashSpecs.SHA2.API
+public import Hash.SHA2.API
 
 /-!
 # C entry points for the differential-testing harness
@@ -21,19 +21,19 @@ one reference to the input, which the callee consumes.
 
 public section
 
-namespace HashSpecsFFI
+namespace HashFFI
 
 /-- SHA-224. -/
-@[export hs_sha224] def sha224 (m : ByteArray) : ByteArray := HashSpecs.sha224 m
+@[export hs_sha224] def sha224 (m : ByteArray) : ByteArray := Hash.sha224 m
 /-- SHA-256. -/
-@[export hs_sha256] def sha256 (m : ByteArray) : ByteArray := HashSpecs.sha256 m
+@[export hs_sha256] def sha256 (m : ByteArray) : ByteArray := Hash.sha256 m
 /-- SHA-384. -/
-@[export hs_sha384] def sha384 (m : ByteArray) : ByteArray := HashSpecs.sha384 m
+@[export hs_sha384] def sha384 (m : ByteArray) : ByteArray := Hash.sha384 m
 /-- SHA-512. -/
-@[export hs_sha512] def sha512 (m : ByteArray) : ByteArray := HashSpecs.sha512 m
+@[export hs_sha512] def sha512 (m : ByteArray) : ByteArray := Hash.sha512 m
 /-- SHA-512/224. -/
-@[export hs_sha512_224] def sha512_224 (m : ByteArray) : ByteArray := HashSpecs.sha512_224 m
+@[export hs_sha512_224] def sha512_224 (m : ByteArray) : ByteArray := Hash.sha512_224 m
 /-- SHA-512/256. -/
-@[export hs_sha512_256] def sha512_256 (m : ByteArray) : ByteArray := HashSpecs.sha512_256 m
+@[export hs_sha512_256] def sha512_256 (m : ByteArray) : ByteArray := Hash.sha512_256 m
 
-end HashSpecsFFI
+end HashFFI

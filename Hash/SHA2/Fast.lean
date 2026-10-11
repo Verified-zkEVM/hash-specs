@@ -5,24 +5,24 @@ Authors: Derek Sorensen
 -/
 module
 
-public import HashSpecs.Prelude.Bytes
-public import HashSpecs.SHA2.Reference
+public import Hash.Prelude.Bytes
+public import Hash.SHA2.Reference
 
 /-!
 # SHA-2: fast specification
 
 An executable SHA-2 over byte arrays and machine words. It follows the structure of the reference
-specification (`HashSpecs.SHA2.Reference`) step by step, but works on `ByteArray` messages and
+specification (`Hash.SHA2.Reference`) step by step, but works on `ByteArray` messages and
 `UInt32`/`UInt64` words instead of bit strings and `BitVec w`. It is generic over the word type
 through the `Word` class, and specialised by the compiler for `UInt32` and `UInt64`.
 
-`HashSpecs.SHA2.Equiv` proves that, on byte-aligned messages, this function computes exactly the
+`Hash.SHA2.Equiv` proves that, on byte-aligned messages, this function computes exactly the
 reference specification.
 -/
 
 @[expose] public section
 
-namespace HashSpecs.SHA2.Fast
+namespace Hash.SHA2.Fast
 
 /-- The machine-word operations used by SHA-2. -/
 class Word (α : Type) where
@@ -139,4 +139,4 @@ be a multiple of 8. -/
     (fun H i => compress P K H p (i * blockBytes)) H₀
   (H.foldl pushBE ByteArray.empty).extract 0 (P.digestBits / 8)
 
-end HashSpecs.SHA2.Fast
+end Hash.SHA2.Fast

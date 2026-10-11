@@ -14,7 +14,7 @@ stores of `UInt32` and `UInt64` words in a `ByteArray`. This file is Mathlib-fre
 
 @[expose] public section
 
-namespace HashSpecs
+namespace Hash
 
 /-! ### Hexadecimal -/
 
@@ -119,4 +119,4 @@ def ByteArray.ofHex? (s : String) : Option ByteArray :=
 def ByteArray.zeros (n : Nat) : ByteArray :=
   ⟨Array.replicate n 0⟩
 
-end HashSpecs
+end Hash

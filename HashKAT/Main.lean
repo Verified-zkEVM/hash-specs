@@ -5,12 +5,12 @@ Authors: Derek Sorensen
 -/
 module
 
-public import HashSpecs.SHA2.API
+public import Hash.SHA2.API
 
 /-!
 # Known-answer test runner (placeholder)
 -/
 
 public def main : IO UInt32 := do
-  IO.println (HashSpecs.ByteArray.toHex (HashSpecs.sha256 "abc".toUTF8))
+  IO.println (Hash.ByteArray.toHex (Hash.sha256 "abc".toUTF8))
   return 0

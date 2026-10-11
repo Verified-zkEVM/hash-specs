@@ -5,4 +5,4 @@ Authors: Derek Sorensen
 -/
 module
 
-import HashSpecsTests.SHA2
+public import HashFFI.Export

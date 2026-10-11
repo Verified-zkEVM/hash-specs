@@ -5,19 +5,19 @@ Authors: Derek Sorensen
 -/
 module
 
-public import HashSpecs.SHA2.Fast
-public import HashSpecs.SHA2.Instances
+public import Hash.SHA2.Fast
+public import Hash.SHA2.Instances
 
 /-!
 # SHA-2: byte-level API
 
 The members of the SHA-2 family as functions on byte arrays, computed by the fast specification.
-`HashSpecs.SHA2.Equiv` proves each of them equal to the reference specification.
+`Hash.SHA2.Equiv` proves each of them equal to the reference specification.
 -/
 
 @[expose] public section
 
-namespace HashSpecs
+namespace Hash
 
 /-- SHA-224 [FIPS 180-4, §6.3]. -/
 def sha224 (m : ByteArray) : ByteArray := SHA2.Fast.hashWith UInt32 SHA2.sha224 m
@@ -37,4 +37,4 @@ def sha512_224 (m : ByteArray) : ByteArray := SHA2.Fast.hashWith UInt64 SHA2.sha
 /-- SHA-512/256 [FIPS 180-4, §6.7]. -/
 def sha512_256 (m : ByteArray) : ByteArray := SHA2.Fast.hashWith UInt64 SHA2.sha512_256 m
 
-end HashSpecs
+end Hash

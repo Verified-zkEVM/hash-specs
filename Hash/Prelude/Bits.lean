@@ -22,7 +22,7 @@ This file is Mathlib-free.
 
 @[expose] public section
 
-namespace HashSpecs
+namespace Hash
 
 /-- The `w`-bit big-endian representation of `n`: the most significant bit comes first.
 Only the `w` low-order bits of `n` are kept. -/
@@ -68,4 +68,4 @@ where
     | _ + 1, [] => []
     | k + 1, l@(_ :: _) => l.take n :: go k (l.drop n)
 
-end HashSpecs
+end Hash

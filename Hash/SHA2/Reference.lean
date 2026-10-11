@@ -5,7 +5,7 @@ Authors: Derek Sorensen
 -/
 module
 
-public import HashSpecs.Prelude.Bits
+public import Hash.Prelude.Bits
 
 /-!
 # SHA-2: reference specification
@@ -16,10 +16,10 @@ are `BitVec w`, matching the standard's data model [FIPS 180-4, §2.1, §3.1].
 
 FIPS 180-4 describes SHA-224/256 (32-bit words, 64 rounds) and SHA-384/512/512-t (64-bit words,
 80 rounds) separately, but with identical structure. We state that structure once, parameterised
-by `Params`; the members of the family are instances in `HashSpecs.SHA2.Instances`.
+by `Params`; the members of the family are instances in `Hash.SHA2.Instances`.
 
 This specification is meant to be read, not run on large inputs. The executable specification is
-`HashSpecs.SHA2.Fast`, and the two are proved equal in `HashSpecs.SHA2.Equiv`.
+`Hash.SHA2.Fast`, and the two are proved equal in `Hash.SHA2.Equiv`.
 
 ## References
 
@@ -29,7 +29,7 @@ This specification is meant to be read, not run on large inputs. The executable 
 
 @[expose] public section
 
-namespace HashSpecs.SHA2
+namespace Hash.SHA2
 
 /-- Rotation and shift amounts of one of the functions `Σ₀, Σ₁, σ₀, σ₁` [FIPS 180-4, §4.1.2,
 §4.1.3]. `Σ` uses three rotations; `σ` uses two rotations and a final right shift. -/
@@ -181,4 +181,4 @@ def hash (P : Params) (M : List Bool) : List Bool :=
 
 end Reference
 
-end HashSpecs.SHA2
+end Hash.SHA2

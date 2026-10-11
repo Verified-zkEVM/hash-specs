@@ -1,7 +1,7 @@
 name = "hash-specs"
 version = "0.1.0"
-defaultTargets = ["HashSpecs", "HashSpecsTests"]
-testDriver = "HashSpecsTests"
+defaultTargets = ["Hash", "HashTests"]
+testDriver = "HashTests"
 lintDriver = "batteries/runLinter"
 
 # Linter options mirror CSLib's `lakefile.toml` (see ROADMAP.md §2.1), plus `autoImplicit = false`.
@@ -25,14 +25,14 @@ name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.34.0"
 
-# Layer 2 only (`HashSpecsZK`). The toolchain matches CompPoly's, so its prebuilt release
+# Layer 2 only (`HashZK`). The toolchain matches CompPoly's, so its prebuilt release
 # oleans are used (ROADMAP.md §2.1).
 [[require]]
 name = "CompPoly"
 git = "https://github.com/Verified-zkEVM/CompPoly"
 rev = "v4.34.0-patch2"
 
-# Documentation only (`HashSpecsDocs`).
+# Documentation only (`HashDocs`).
 [[require]]
 name = "verso"
 git = "https://github.com/leanprover/verso"
@@ -40,33 +40,33 @@ rev = "v4.34.0"
 
 # Layer 1: the core specifications. Mathlib-only; see `scripts/check_layer_imports.py`.
 [[lean_lib]]
-name = "HashSpecs"
+name = "Hash"
 
 # Layer 1 tests: small kernel-checked known-answer tests and properties (upstreamable).
 [[lean_lib]]
-name = "HashSpecsTests"
-globs = ["HashSpecsTests.+"]
+name = "HashTests"
+globs = ["HashTests.+"]
 
 # Layer 2: CompPoly-backed fast field arithmetic for the ZK-friendly hashes (Phase 4).
 [[lean_lib]]
-name = "HashSpecsZK"
+name = "HashZK"
 
 # Layer 3: C-ABI entry points used by the Rust differential-testing harness.
 [[lean_lib]]
-name = "HashSpecsFFI"
+name = "HashFFI"
 defaultFacets = ["static"]
 
 # Layer 3: runner for the full official known-answer test suites.
 [[lean_exe]]
-name = "hash-specs-kat"
-root = "HashSpecsKAT.Main"
+name = "hash-kat"
+root = "HashKAT.Main"
 
 # Layer 3: the Verso book.
 [[lean_lib]]
-name = "HashSpecsDocs"
+name = "HashDocs"
 srcDir = "docs"
 
 [[lean_exe]]
-name = "hash-specs-docs"
+name = "hash-docs"
 srcDir = "docs"
-root = "HashSpecsDocs.Main"
+root = "HashDocs.Main"
