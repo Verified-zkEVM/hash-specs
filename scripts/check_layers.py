@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""Check the layering rules of ROADMAP.md §2.1.
+
+1. Layer 1 (`Hash/`, `HashTests/`) imports only Lean core, Mathlib and Mathlib's own
+   dependencies, and other Layer 1 modules. It never imports CompPoly, Verso, or Layers 2 and 3.
+2. The C-export library (`HashFFI`) is Mathlib-free: none of its transitive imports inside this
+   repository import Mathlib, Batteries, Aesop, Qq, Plausible or `Hash.Init`. It is linked into the
+   Rust harness as a static library, and must stay small.
+3. Layer 1 contains no `sorry`, `admit`, `native_decide` or `axiom` declarations.
+
+Exits non-zero, with a message per violation, if any rule is broken.
+"""
+
+import pathlib
+import re
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([\w.«»]+)", re.M)
+LAYER1_DIRS = ["Hash", "HashTests"]
+LAYER1_ALLOWED = ("Init", "Std", "Lean", "Mathlib", "Batteries", "Aesop", "Qq", "Plausible",
+                  "ProofWidgets", "ImportGraph", "LeanSearchClient", "Hash", "HashTests")
+LAYER1_FORBIDDEN_LOCAL = ("HashZK", "HashFFI", "HashKAT", "HashDocs")
+MATHLIB_FAMILY = ("Mathlib", "Batteries", "Aesop", "Qq", "Plausible", "ProofWidgets", "ImportGraph",
+                  "LeanSearchClient")
+FORBIDDEN_TOKENS = re.compile(r"\b(sorry|admit|native_decide)\b|^\s*axiom\s", re.M)
+
+
+def strip_comments(src: str) -> str:
+    src = re.sub(r"/-.*?-/", "", src, flags=re.S)
+    return re.sub(r"--[^\n]*", "", src)
+
+
+def module_file(mod: str) -> pathlib.Path | None:
+    path = ROOT / (mod.replace(".", "/") + ".lean")
+    return path if path.exists() else None
+
+
+def imports(path: pathlib.Path) -> list[str]:
+    return IMPORT.findall(strip_comments(path.read_text()))
+
+
+def top(mod: str) -> str:
+    return mod.split(".")[0]
+
+
+def main() -> int:
+    errors: list[str] = []
+    layer1 = [p for d in LAYER1_DIRS for p in (ROOT / d).rglob("*.lean")] + [ROOT / "Hash.lean"]
+
+    for path in layer1:
+        rel = path.relative_to(ROOT)
+        for mod in imports(path):
+            if top(mod) in LAYER1_FORBIDDEN_LOCAL or not top(mod) in LAYER1_ALLOWED:
+                errors.append(f"{rel}: Layer 1 must not import {mod}")
+        for m in FORBIDDEN_TOKENS.finditer(strip_comments(path.read_text())):
+            errors.append(f"{rel}: forbidden in Layer 1: {m.group(0).strip()}")
+
+    # Transitive closure of HashFFI inside the repository.
+    seen: set[str] = set()
+    stack = ["HashFFI"]
+    while stack:
+        mod = stack.pop()
+        if mod in seen:
+            continue
+        seen.add(mod)
+        path = module_file(mod)
+        if path is None:
+            continue
+        for dep in imports(path):
+            if top(dep) in MATHLIB_FAMILY or dep == "Hash.Init":
+                errors.append(f"{path.relative_to(ROOT)}: imported by HashFFI, must be Mathlib-free, imports {dep}")
+            elif module_file(dep) is not None:
+                stack.append(dep)
+
+    for e in errors:
+        print(e, file=sys.stderr)
+    if not errors:
+        print(f"layer checks passed ({len(layer1)} Layer 1 files, {len(seen)} modules in the HashFFI closure)")
+    return 1 if errors else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

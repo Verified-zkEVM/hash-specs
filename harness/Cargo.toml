@@ -1,0 +1,10 @@
+[workspace]
+members = ["hash-lean"]
+exclude = ["fuzz"]
+resolver = "2"
+
+[profile.release]
+debug = 1
+
+[profile.bench]
+debug = 1

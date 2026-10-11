@@ -1,0 +1,88 @@
+% Sources for the Hash library and its book. Primary sources first.
+% Keys follow the pattern AuthorYear or the standard's designation, so that they can be merged
+% into CSLib's references.bib.
+
+@techreport{FIPS180-4,
+  author      = {{National Institute of Standards and Technology}},
+  title       = {Secure Hash Standard ({SHS})},
+  institution = {U.S. Department of Commerce},
+  type        = {Federal Information Processing Standards Publication},
+  number      = {180-4},
+  year        = {2015},
+  doi         = {10.6028/NIST.FIPS.180-4},
+  url         = {https://doi.org/10.6028/NIST.FIPS.180-4}
+}
+
+@techreport{FIPS202,
+  author      = {{National Institute of Standards and Technology}},
+  title       = {{SHA-3} Standard: Permutation-Based Hash and Extendable-Output Functions},
+  institution = {U.S. Department of Commerce},
+  type        = {Federal Information Processing Standards Publication},
+  number      = {202},
+  year        = {2015},
+  doi         = {10.6028/NIST.FIPS.202},
+  url         = {https://doi.org/10.6028/NIST.FIPS.202}
+}
+
+@misc{RFC7693,
+  author       = {Markku-Juhani O. Saarinen and Jean-Philippe Aumasson},
+  title        = {The {BLAKE2} Cryptographic Hash and Message Authentication Code ({MAC})},
+  howpublished = {RFC 7693},
+  year         = {2015},
+  doi          = {10.17487/RFC7693},
+  url          = {https://www.rfc-editor.org/rfc/rfc7693}
+}
+
+@inproceedings{AumassonNWW2013,
+  author    = {Jean-Philippe Aumasson and Samuel Neves and Zooko Wilcox-O'Hearn and Christian Winnerlein},
+  title     = {{BLAKE2}: Simpler, Smaller, Fast as {MD5}},
+  booktitle = {Applied Cryptography and Network Security ({ACNS})},
+  series    = {LNCS},
+  volume    = {7954},
+  pages     = {119--135},
+  year      = {2013},
+  doi       = {10.1007/978-3-642-38980-1_8}
+}
+
+@misc{BLAKE3,
+  author       = {Jack O'Connor and Jean-Philippe Aumasson and Samuel Neves and Zooko Wilcox-O'Hearn},
+  title        = {{BLAKE3}: One Function, Fast Everywhere},
+  howpublished = {Specification},
+  year         = {2020},
+  url          = {https://github.com/BLAKE3-team/BLAKE3-specs/blob/master/blake3.pdf}
+}
+
+@misc{EIP152,
+  author       = {Tjaden Hess and Matt Luongo and Piotr Dyraga and James Hancock},
+  title        = {{EIP-152}: Add {BLAKE2} compression function `{F}' precompile},
+  howpublished = {Ethereum Improvement Proposal 152},
+  year         = {2016},
+  url          = {https://eips.ethereum.org/EIPS/eip-152}
+}
+
+@misc{KeccakReference,
+  author       = {Guido Bertoni and Joan Daemen and Michaël Peeters and Gilles Van Assche},
+  title        = {The {Keccak} Reference, Version 3.0},
+  year         = {2011},
+  url          = {https://keccak.team/files/Keccak-reference-3.0.pdf}
+}
+
+@inproceedings{AlmeidaEtAl2019,
+  author    = {José Bacelar Almeida and Cécile Baritel-Ruet and Manuel Barbosa and Gilles Barthe and François Dupressoir and Benjamin Grégoire and Vincent Laporte and Tiago Oliveira and Alley Stoughton and Pierre-Yves Strub},
+  title     = {Machine-Checked Proofs for Cryptographic Standards: Indifferentiability of Sponge and Secure High-Assurance Implementations of {SHA-3}},
+  booktitle = {ACM SIGSAC Conference on Computer and Communications Security ({CCS})},
+  pages     = {1607--1622},
+  year      = {2019},
+  doi       = {10.1145/3319535.3363211}
+}
+
+@article{Appel2015,
+  author  = {Andrew W. Appel},
+  title   = {Verification of a Cryptographic Primitive: {SHA-256}},
+  journal = {ACM Transactions on Programming Languages and Systems},
+  volume  = {37},
+  number  = {2},
+  pages   = {7:1--7:31},
+  year    = {2015},
+  doi     = {10.1145/2701415}
+}

@@ -268,6 +268,13 @@ Each hash gets at least two oracles, chosen for independent code lineage. Many K
 
 **Divergence triage.** A mismatch is *a bug somewhere*. Each mismatch gets an issue recording which side was wrong, judged against the standard text, and why. Bugs found in oracles are reported upstream responsibly.
 
+
+### 4.4 Benchmarks (a record, not a requirement)
+
+The harness also benchmarks each fast Lean specification against the implementations it is
+differentially tested against (`criterion`, in-process through the same C exports). The results go
+to `harness/BENCHMARKS.md` (`harness/scripts/bench_report.py`). This is only a record of relative
+efficiency: there are no thresholds, and nothing fails if the Lean code is slower.
 ---
 
 ## 5. Phased roadmap
@@ -283,6 +290,7 @@ Sizes are relative (S/M/L/XL), not calendar estimates. Each phase ends with expl
 - `Prelude`: byte, word and endianness utilities and their core `BitVec`/`UInt` lemmas.
 - Harness skeleton: a `hashspecs-sys` crate links a trivial `@[export]` function and runs one `cargo-fuzz` target in CI on Linux and macOS.
 - Verso skeleton: one chapter containing a compiled TikZ→SVG diagram, a type-checked code block and a bibliography citation, deployed to GitHub Pages.
+- *As implemented:* doc-gen4 and checkdecls are deferred. The Verso book and module docstrings cover documentation for now, and doc-gen4 would add a second set of documentation dependencies. Verso's bibliography has no type for standards (FIPS, RFCs, EIPs), so the book cites those by name, section and link, and `references.bib` lists every source.
 - **Exit:** CI is green end to end on the placeholder, and CompPoly builds on the chosen toolchain.
 
 ### Phase 1: SHA-256 vertical slice, then the rest of SHA-2 (L)

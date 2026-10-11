@@ -41,10 +41,10 @@ example : (sha384 (ascii "abc")).toHex =
     "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded163" ++
     "1a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7" := by decide +kernel
 
-example : (sha512_224 (ascii "abc")).toHex =
+example : (sha512t224 (ascii "abc")).toHex =
     "4634270f707b6a54daae7530460842e20e37ed265ceee9a43e8924aa" := by decide +kernel
 
-example : (sha512_256 (ascii "abc")).toHex =
+example : (sha512t256 (ascii "abc")).toHex =
     "53048e2681941ef99b2e29b76b4c7dabe4c2d0c634fc6d46e0e2f13107e7af23" := by decide +kernel
 
 example : (sha256 ByteArray.empty).toHex =

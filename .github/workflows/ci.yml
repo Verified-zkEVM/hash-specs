@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Layer 1: build with warnings as errors, kernel-checked tests, axiom audit, linters, layering.
+  lean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: leanprover/lean-action@v1
+        with:
+          use-mathlib-cache: true
+          build: false
+          test: false
+          lint: false
+      - name: Layering and hygiene
+        run: python3 scripts/check_layers.py
+      - name: Build Hash (warnings are errors)
+        run: lake build --wfail Hash
+      - name: Tests and axiom audit
+        run: lake build --wfail HashTests
+      - name: Environment linters
+        run: lake lint
+      - name: Build the other Lean libraries
+        run: lake build --wfail HashZK HashFFI hash-kat
+      - name: Full known-answer test suites
+        run: lake exe hash-kat
+
+  # Layer 3: differential tests against independent implementations, plus a fuzzing smoke run.
+  harness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: leanprover/lean-action@v1
+        with:
+          use-mathlib-cache: true
+          build: false
+          test: false
+          lint: false
+      - name: Build the Lean static libraries
+        run: lake build HashFFI:static Hash:static
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Differential tests
+        working-directory: harness/hash-lean
+        env:
+          HASH_LEAN_SKIP_LAKE: "1"
+        run: cargo test --release
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+      - name: Fuzzing smoke run (60 s per target)
+        working-directory: harness/fuzz
+        env:
+          HASH_LEAN_SKIP_LAKE: "1"
+        run: |
+          for target in $(cargo +nightly fuzz list); do
+            cargo +nightly fuzz run "$target" -- -max_total_time=60 -max_len=4096
+          done
+
+  # The Verso book.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: leanprover/lean-action@v1
+        with:
+          use-mathlib-cache: true
+          build: false
+          test: false
+          lint: false
+      - name: Build the book
+        run: |
+          lake build --wfail hash-docs
+          lake exe hash-docs --output _site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site/html-multi
+
+  deploy-docs:
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: docs
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Advisory: does Layer 1 build on CSLib's current toolchain and Mathlib? (ROADMAP.md §6.2)
+  cslib-compat:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
+            | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Build Layer 1 against CSLib's pins
+        run: bash scripts/cslib_compat.sh "$RUNNER_TEMP/cslib-compat"

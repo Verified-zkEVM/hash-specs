@@ -1,0 +1,23 @@
+[package]
+name = "hash-lean"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+publish = false
+description = "In-process bindings to the fast Lean specifications of the `Hash` library, for differential testing and benchmarking."
+
+[dependencies]
+
+[build-dependencies]
+cc = "1"
+
+[dev-dependencies]
+aws-lc-rs = "1"
+criterion = { version = "0.5", default-features = false }
+hex = "0.4"
+proptest = "1"
+sha2 = "0.10"
+
+[[bench]]
+name = "throughput"
+harness = false

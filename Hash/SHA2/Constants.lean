@@ -48,12 +48,12 @@ def K256 : List Nat := [
 
 /-- SHA-256 initial hash value `H⁽⁰⁾` [FIPS 180-4, §5.3.3]: "the first thirty-two bits of the
 fractional parts of the square roots of the first eight prime numbers". -/
-def H0_256 : List Nat := [
+def initialHash256 : List Nat := [
   0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
 
 /-- SHA-224 initial hash value `H⁽⁰⁾` [FIPS 180-4, §5.3.2]. These are the second thirty-two bits
 of the fractional parts of the square roots of the ninth through sixteenth primes. -/
-def H0_224 : List Nat := [
+def initialHash224 : List Nat := [
   0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939, 0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4]
 
 /-! ### SHA-384, SHA-512 and SHA-512/t [FIPS 180-4, §4.2.3, §5.3.4–5.3.6] -/
@@ -85,23 +85,23 @@ def K512 : List Nat := [
 
 /-- SHA-512 initial hash value `H⁽⁰⁾` [FIPS 180-4, §5.3.5]: "the first sixty-four bits of the
 fractional parts of the square roots of the first eight prime numbers". -/
-def H0_512 : List Nat := [
+def initialHash512 : List Nat := [
   0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
   0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179]
 
 /-- SHA-384 initial hash value `H⁽⁰⁾` [FIPS 180-4, §5.3.4]: "the first sixty-four bits of the
 fractional parts of the square roots of the ninth through sixteenth prime numbers". -/
-def H0_384 : List Nat := [
+def initialHash384 : List Nat := [
   0xcbbb9d5dc1059ed8, 0x629a292a367cd507, 0x9159015a3070dd17, 0x152fecd8f70e5939,
   0x67332667ffc00b31, 0x8eb44a8768581511, 0xdb0c2e0d64f98fa7, 0x47b5481dbefa4fa4]
 
 /-- SHA-512/224 initial hash value `H⁽⁰⁾` [FIPS 180-4, §5.3.6.1]. -/
-def H0_512_224 : List Nat := [
+def initialHash512t224 : List Nat := [
   0x8C3D37C819544DA2, 0x73E1996689DCD4D6, 0x1DFAB7AE32FF9C82, 0x679DD514582F9FCF,
   0x0F6D2B697BD44DA8, 0x77E36F7304C48942, 0x3F9D85A86A1D36C8, 0x1112E6AD91D692A1]
 
 /-- SHA-512/256 initial hash value `H⁽⁰⁾` [FIPS 180-4, §5.3.6.2]. -/
-def H0_512_256 : List Nat := [
+def initialHash512t256 : List Nat := [
   0x22312194FC2BF72C, 0x9F555FA3C84C64C2, 0x2393B86B6F53B151, 0x963877195940EABD,
   0x96283EE2A88EFFE3, 0xBE5E1E2553863992, 0x2B0199FC2C85B8AA, 0x0EB72DDC81C52CA2]
 
@@ -113,22 +113,22 @@ theorem K256_eq : K256 = (first80Primes.take 64).map (fracRootBits 3 32) := by d
 /-- `K512` is the first 64 bits of the fractional parts of the cube roots of the first 80 primes. -/
 theorem K512_eq : K512 = first80Primes.map (fracRootBits 3 64) := by decide +kernel
 
-/-- `H0_256` is the first 32 bits of the fractional parts of the square roots of the first eight
+/-- `initialHash256` is the first 32 bits of the fractional parts of the square roots of the first eight
 primes. -/
-theorem H0_256_eq : H0_256 = (first80Primes.take 8).map (fracRootBits 2 32) := by decide +kernel
+theorem initialHash256_eq : initialHash256 = (first80Primes.take 8).map (fracRootBits 2 32) := by decide +kernel
 
-/-- `H0_512` is the first 64 bits of the fractional parts of the square roots of the first eight
+/-- `initialHash512` is the first 64 bits of the fractional parts of the square roots of the first eight
 primes. -/
-theorem H0_512_eq : H0_512 = (first80Primes.take 8).map (fracRootBits 2 64) := by decide +kernel
+theorem initialHash512_eq : initialHash512 = (first80Primes.take 8).map (fracRootBits 2 64) := by decide +kernel
 
-/-- `H0_384` is the first 64 bits of the fractional parts of the square roots of the ninth through
+/-- `initialHash384` is the first 64 bits of the fractional parts of the square roots of the ninth through
 sixteenth primes. -/
-theorem H0_384_eq : H0_384 = ((first80Primes.drop 8).take 8).map (fracRootBits 2 64) := by
+theorem initialHash384_eq : initialHash384 = ((first80Primes.drop 8).take 8).map (fracRootBits 2 64) := by
   decide +kernel
 
-/-- `H0_224` is the second 32 bits of the fractional parts of the square roots of the ninth
-through sixteenth primes, i.e. the low halves of `H0_384`. -/
-theorem H0_224_eq : H0_224 = ((first80Primes.drop 8).take 8).map (fun p => fracRootBits 2 64 p % 2 ^ 32) := by
+/-- `initialHash224` is the second 32 bits of the fractional parts of the square roots of the ninth
+through sixteenth primes, i.e. the low halves of `initialHash384`. -/
+theorem initialHash224_eq : initialHash224 = ((first80Primes.drop 8).take 8).map (fun p => fracRootBits 2 64 p % 2 ^ 32) := by
   decide +kernel
 
 end Hash.SHA2

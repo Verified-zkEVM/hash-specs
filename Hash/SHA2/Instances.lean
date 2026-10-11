@@ -49,22 +49,22 @@ def params64 (H0 : List Nat) (digestBits : Nat) : Params where
   digestBits := digestBits
 
 /-- SHA-224 [FIPS 180-4, §6.3]. -/
-def sha224 : Params := params32 H0_224 224
+def sha224 : Params := params32 initialHash224 224
 
 /-- SHA-256 [FIPS 180-4, §6.2]. -/
-def sha256 : Params := params32 H0_256 256
+def sha256 : Params := params32 initialHash256 256
 
 /-- SHA-384 [FIPS 180-4, §6.5]. -/
-def sha384 : Params := params64 H0_384 384
+def sha384 : Params := params64 initialHash384 384
 
 /-- SHA-512 [FIPS 180-4, §6.4]. -/
-def sha512 : Params := params64 H0_512 512
+def sha512 : Params := params64 initialHash512 512
 
 /-- SHA-512/224 [FIPS 180-4, §6.6]. -/
-def sha512_224 : Params := params64 H0_512_224 224
+def sha512t224 : Params := params64 initialHash512t224 224
 
 /-- SHA-512/256 [FIPS 180-4, §6.7]. -/
-def sha512_256 : Params := params64 H0_512_256 256
+def sha512t256 : Params := params64 initialHash512t256 256
 
 /-! ### The SHA-512/t initial hash values [FIPS 180-4, §5.3.6] -/
 
@@ -72,7 +72,7 @@ def sha512_256 : Params := params64 H0_512_256 256
 `H⁽⁰⁾″ = H⁽⁰⁾ ⊕ a5a5a5a5a5a5a5a5` (the SHA-512 initial value XORed word-wise), applied to the
 ASCII string `"SHA-512/t"`. The 512-bit result is the initial hash value of SHA-512/t. -/
 def sha512tIV (name : List UInt8) : List Nat :=
-  let P := params64 (H0_512.map (· ^^^ 0xa5a5a5a5a5a5a5a5)) 512
+  let P := params64 (initialHash512.map (· ^^^ 0xa5a5a5a5a5a5a5a5)) 512
   (chunks 64 (Reference.hash P (bytesToBitsMSB name))).map bitsToNatBE
 
 end Hash.SHA2

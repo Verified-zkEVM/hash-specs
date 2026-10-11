@@ -1,0 +1,20 @@
+% Shared style for the Hash diagrams.
+% Palette: Okabe–Ito (colour-blind safe). Every diagram is drawn on an opaque white card so it
+% stays legible on dark page themes.
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds}
+\definecolor{hsblue}{HTML}{0072B2}
+\definecolor{hsorange}{HTML}{E69F00}
+\definecolor{hsgreen}{HTML}{009E73}
+\definecolor{hsvermilion}{HTML}{D55E00}
+\definecolor{hspurple}{HTML}{CC79A7}
+\definecolor{hsink}{HTML}{1F2933}
+\tikzset{
+  >={Stealth[length=2.2mm]},
+  every node/.style={font=\sffamily\small, text=hsink},
+  wire/.style={draw=hsink, line width=0.6pt, ->},
+  reg/.style={draw=hsink, line width=0.6pt, fill=hsblue!12, minimum width=9mm, minimum height=7mm},
+  fn/.style={draw=hsink, line width=0.6pt, fill=hsorange!25, rounded corners=2pt, minimum width=10mm, minimum height=6mm},
+  input/.style={draw=hsink, line width=0.6pt, fill=hsgreen!20, minimum width=9mm, minimum height=6mm},
+  add/.style={circle, draw=hsink, line width=0.6pt, fill=white, inner sep=0pt, minimum size=5mm, font=\sffamily\bfseries},
+  card/.style={fill=white, rounded corners=4pt},
+}

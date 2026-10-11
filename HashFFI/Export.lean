@@ -32,8 +32,8 @@ namespace HashFFI
 /-- SHA-512. -/
 @[export hs_sha512] def sha512 (m : ByteArray) : ByteArray := Hash.sha512 m
 /-- SHA-512/224. -/
-@[export hs_sha512_224] def sha512_224 (m : ByteArray) : ByteArray := Hash.sha512_224 m
+@[export hs_sha512t224] def sha512t224 (m : ByteArray) : ByteArray := Hash.sha512t224 m
 /-- SHA-512/256. -/
-@[export hs_sha512_256] def sha512_256 (m : ByteArray) : ByteArray := Hash.sha512_256 m
+@[export hs_sha512t256] def sha512t256 (m : ByteArray) : ByteArray := Hash.sha512t256 m
 
 end HashFFI

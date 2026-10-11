@@ -1,1 +1,6 @@
 /.lake
+/_site
+/harness/target
+/harness/fuzz/target
+/harness/fuzz/artifacts
+/harness/fuzz/coverage

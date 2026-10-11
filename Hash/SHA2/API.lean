@@ -32,9 +32,9 @@ def sha384 (m : ByteArray) : ByteArray := SHA2.Fast.hashWith UInt64 SHA2.sha384 
 def sha512 (m : ByteArray) : ByteArray := SHA2.Fast.hashWith UInt64 SHA2.sha512 m
 
 /-- SHA-512/224 [FIPS 180-4, §6.6]. -/
-def sha512_224 (m : ByteArray) : ByteArray := SHA2.Fast.hashWith UInt64 SHA2.sha512_224 m
+def sha512t224 (m : ByteArray) : ByteArray := SHA2.Fast.hashWith UInt64 SHA2.sha512t224 m
 
 /-- SHA-512/256 [FIPS 180-4, §6.7]. -/
-def sha512_256 (m : ByteArray) : ByteArray := SHA2.Fast.hashWith UInt64 SHA2.sha512_256 m
+def sha512t256 (m : ByteArray) : ByteArray := SHA2.Fast.hashWith UInt64 SHA2.sha512t256 m
 
 end Hash
