@@ -18,6 +18,7 @@ of them depends on an axiom other than `propext`, `Classical.choice` and `Quot.s
 -- SHA-2 constants [FIPS 180-4, §4.2, §5.3].
 audit_axioms Hash.SHA2.K256_eq Hash.SHA2.K512_eq Hash.SHA2.initialHash256_eq
   Hash.SHA2.initialHash512_eq Hash.SHA2.initialHash384_eq Hash.SHA2.initialHash224_eq
+  Hash.SHA2.initialHash512t224_eq Hash.SHA2.initialHash512t256_eq
 
 -- SHA-2: the fast specification equals the reference [FIPS 180-4].
 audit_axioms Hash.SHA2.Equiv.hashWith_eq Hash.SHA2.sha224_eq Hash.SHA2.sha256_eq
