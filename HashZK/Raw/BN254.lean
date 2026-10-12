@@ -56,6 +56,7 @@ structure Fr where
   zero := ⟨Limbs8.zero⟩
   one := ⟨r⟩
   add x y := ⟨Montgomery.Native64x8.add q x.val y.val⟩
+  neg x := ⟨Montgomery.Native64x8.neg q x.val⟩
   mul x y := ⟨Montgomery.Native64x8.mul q negInv x.val y.val⟩
   ofNat n := ⟨Montgomery.Native64x8.mul q negInv (Limbs8.ofNat (n % bn254)) r2⟩
   inv x := x

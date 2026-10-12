@@ -79,3 +79,9 @@ audit_axioms Hash.ZK.sbox_sbox_invExponent Hash.ZK.sbox_invExponent_sbox Hash.ZK
   Hash.ZK.FieldOps.pow_eq Hash.ZK.FieldOps.Hom.ofRingHom Hash.ZK.Poseidon.Fast.map_permutation
   Hash.ZK.Poseidon.Circom.fastParams_toRef Hash.ZK.Poseidon.Circom.map_fastParams
   Hash.ZK.Poseidon.Circom.map_permutation_fastParams
+
+-- Poseidon2: the fast linear layers are the matrices, the fast permutation computes the reference,
+-- and the instances' fast parameters represent their specifications.
+audit_axioms Hash.ZK.Poseidon2.Fast.externalM4_eq Hash.ZK.Poseidon2.Fast.permutation_eq
+  Hash.ZK.Poseidon2.Fast.map_permutation Hash.ZK.Poseidon2.Plonky3.map_permutation_fastParams
+  Hash.ZK.Poseidon2.map_permutation_hlBn254FastParams

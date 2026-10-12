@@ -30,6 +30,7 @@ instance ofCommRing : FieldOps F where
   zero := 0
   one := 1
   add := (· + ·)
+  neg x := -x
   mul := (· * ·)
   ofNat n := n
   inv x := x⁻¹
@@ -37,6 +38,7 @@ instance ofCommRing : FieldOps F where
 @[simp] theorem zero_eq : (zero : F) = 0 := rfl
 @[simp] theorem one_eq : (one : F) = 1 := rfl
 @[simp] theorem add_eq (x y : F) : add x y = x + y := rfl
+@[simp] theorem neg_eq (x : F) : neg x = -x := rfl
 @[simp] theorem mul_eq (x y : F) : mul x y = x * y := rfl
 @[simp] theorem ofNat_eq (n : ℕ) : (ofNat n : F) = n := rfl
 @[simp] theorem inv_eq (x : F) : inv x = x⁻¹ := rfl
@@ -64,6 +66,7 @@ theorem Hom.ofRingHom {G : Type} [CommRing G] [Inv G] (φ : F →+* G)
   map_zero := _root_.map_zero φ
   map_one := _root_.map_one φ
   map_add := _root_.map_add φ
+  map_neg := _root_.map_neg φ
   map_mul := _root_.map_mul φ
   map_ofNat := map_natCast φ
   map_inv := hinv

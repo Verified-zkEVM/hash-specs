@@ -38,6 +38,7 @@ theorem hom_toRaw : FieldOps.Hom toRaw where
   map_zero := rfl
   map_one := rfl
   map_add _ _ := rfl
+  map_neg _ := rfl
   map_mul _ _ := rfl
   map_ofNat _ := rfl
   map_inv x := by

@@ -59,3 +59,8 @@ public import Hash.ZK.Poseidon.CircomParams
 public import Hash.ZK.Poseidon.Equiv
 public import Hash.ZK.Poseidon.Fast
 public import Hash.ZK.Poseidon.Reference
+public import Hash.ZK.Poseidon2.Equiv
+public import Hash.ZK.Poseidon2.Fast
+public import Hash.ZK.Poseidon2.InstanceParams
+public import Hash.ZK.Poseidon2.Instances
+public import Hash.ZK.Poseidon2.Reference

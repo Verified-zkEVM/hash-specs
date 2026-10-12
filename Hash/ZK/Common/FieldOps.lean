@@ -30,6 +30,8 @@ class FieldOps (F : Type) where
   one : F
   /-- Addition. -/
   add : F → F → F
+  /-- Negation. -/
+  neg : F → F
   /-- Multiplication. -/
   mul : F → F → F
   /-- The image of a natural number. -/
@@ -56,6 +58,7 @@ structure Hom {A B : Type} [FieldOps A] [FieldOps B] (f : A → B) : Prop where
   map_zero : f zero = zero
   map_one : f one = one
   map_add : ∀ x y, f (add x y) = add (f x) (f y)
+  map_neg : ∀ x, f (neg x) = neg (f x)
   map_mul : ∀ x y, f (mul x y) = mul (f x) (f y)
   map_ofNat : ∀ n, f (ofNat n) = ofNat n
   map_inv : ∀ x, f (inv x) = inv (f x)
