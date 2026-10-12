@@ -39,13 +39,15 @@ fn main() {
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let lean_libs = ["hash_x2dspecs_HashFFI", "hash_x2dspecs_Hash", "Init", "leanrt", "uv", "gmp"];
     if target_os == "linux" {
-        // The Lean archives refer to each other, so let the linker revisit them.
+        // The Lean archives refer to each other, so let the linker revisit them. The Lean
+        // runtime is built against the static libc++ shipped in the toolchain's `lib`, not the
+        // system's libstdc++.
         println!("cargo:rustc-link-arg=-Wl,--start-group");
-        for lib in lean_libs {
-            println!("cargo:rustc-link-arg=-l{lib}");
+        for lib in lean_libs.iter().chain(&["c++", "c++abi"]) {
+            println!("cargo:rustc-link-arg=-l:lib{lib}.a");
         }
         println!("cargo:rustc-link-arg=-Wl,--end-group");
-        for lib in ["stdc++", "m", "pthread", "dl"] {
+        for lib in ["m", "pthread", "dl"] {
             println!("cargo:rustc-link-lib=dylib={lib}");
         }
     } else {
