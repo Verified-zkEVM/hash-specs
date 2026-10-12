@@ -153,4 +153,12 @@ def bariant2022 : Article where
   number := inlines!"3"
   url := some "https://doi.org/10.46586/tosc.v2022.i3.73-101"
 
+/-- Grassi, Khovratovich and Schofnegger, AFRICACRYPT 2023: the Poseidon2 permutation. -/
+def grassi2023 : InProceedings where
+  title := inlines!"Poseidon2: A Faster Version of the Poseidon Hash Function"
+  authors := #[inlines!"Lorenzo Grassi", inlines!"Dmitry Khovratovich", inlines!"Markus Schofnegger"]
+  year := 2023
+  booktitle := inlines!"Progress in Cryptology – AFRICACRYPT 2023, LNCS 14064"
+  url := some "https://eprint.iacr.org/2023/323"
+
 end HashDocs.Bib

@@ -106,6 +106,9 @@ theorem blockMul_get (M4 : Vector (Vector F 4) 4) (x : Vector F t) {i : ℕ} (hi
   rw [foldl_add, zero_add, ← Fin.sum_univ_def, ← Fin.sum_univ_eq_sum_range]
   rfl
 
+/-- The external layer of a width that is a multiple of 4 is the multiplication by
+`circ(2·M₄, M₄, …, M₄)`: entry `i` is the product of its block by `M₄`, plus the sum over all
+blocks of the products at the same position. -/
 theorem externalM4_eq (M4 : Vector (Vector F 4) 4) (h : t % 4 = 0) (x : Vector F t) :
     externalM4 M4 x =
       Vector.ofFn ((blockCirculant fun a b => M4[a][b]).mulVec fun i => x[i]) := by
