@@ -41,4 +41,18 @@ example : (shake128 ByteArray.empty 32).toHex =
 example : (keccak256 ByteArray.empty).toHex =
     "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470" := by decide +kernel
 
+/-! Streaming: messages hashed in pieces give the one-shot output. -/
+
+/-- `n` copies of the byte `x`. -/
+def xs (n : Nat) : ByteArray := ⟨(List.replicate n (0x78 : UInt8)).toArray⟩
+
+example : ((((sha3x256Init.update (xs 10)).update (xs 140)).update (xs 150))
+      |>.finalize).toHex = (sha3x256 (xs 300)).toHex := by decide +kernel
+
+example : (((keccak256Init.update (xs 136)).update ByteArray.empty).finalize).toHex =
+    (keccak256 (xs 136)).toHex := by decide +kernel
+
+example : ((shake128Init.update (xs 200)).squeezeBytes 200).toHex =
+    (shake128 (xs 200) 200).toHex := by decide +kernel
+
 end HashTests.Keccak

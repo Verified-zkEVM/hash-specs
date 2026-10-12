@@ -36,3 +36,10 @@ path = "fuzz_targets/keccak.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "keccak_stream"
+path = "fuzz_targets/keccak_stream.rs"
+test = false
+doc = false
+bench = false

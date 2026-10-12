@@ -18,6 +18,7 @@ public import Hash.Keccak.KeccakP
 public import Hash.Keccak.Properties
 public import Hash.Keccak.SHA3
 public import Hash.Keccak.StateLemmas
+public import Hash.Keccak.Stream
 public import Hash.Prelude.Arith
 public import Hash.Prelude.Bits
 public import Hash.Prelude.BitsLemmas

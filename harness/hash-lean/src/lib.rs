@@ -31,6 +31,7 @@ extern "C" {
     fn hs_keccak256(m: *mut lean_object) -> *mut lean_object;
     fn hs_shake128(input: *mut lean_object) -> *mut lean_object;
     fn hs_shake256(input: *mut lean_object) -> *mut lean_object;
+    fn hs_keccak_stream(input: *mut lean_object) -> *mut lean_object;
 }
 
 static INIT: Once = Once::new();
@@ -192,4 +193,56 @@ pub fn shake128(m: &[u8], out_len: usize) -> Vec<u8> {
 /// SHAKE256 with `out_len` bytes of output, computed by the Lean fast specification.
 pub fn shake256(m: &[u8], out_len: usize) -> Vec<u8> {
     xof(hs_shake256, m, out_len)
+}
+
+/// A Keccak-based function, for the streaming interface.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum KeccakVariant {
+    Sha3_224 = 0,
+    Sha3_256 = 1,
+    Sha3_384 = 2,
+    Sha3_512 = 3,
+    Shake128 = 4,
+    Shake256 = 5,
+    Keccak256 = 6,
+}
+
+impl KeccakVariant {
+    /// All variants.
+    pub const ALL: [KeccakVariant; 7] = [
+        KeccakVariant::Sha3_224,
+        KeccakVariant::Sha3_256,
+        KeccakVariant::Sha3_384,
+        KeccakVariant::Sha3_512,
+        KeccakVariant::Shake128,
+        KeccakVariant::Shake256,
+        KeccakVariant::Keccak256,
+    ];
+
+    /// The output length in bytes, where `xof_len` is used by SHAKE.
+    pub fn output_len(self, xof_len: u16) -> usize {
+        match self {
+            KeccakVariant::Sha3_224 => 28,
+            KeccakVariant::Sha3_256 | KeccakVariant::Keccak256 => 32,
+            KeccakVariant::Sha3_384 => 48,
+            KeccakVariant::Sha3_512 => 64,
+            KeccakVariant::Shake128 | KeccakVariant::Shake256 => xof_len as usize,
+        }
+    }
+}
+
+/// Hash `m` with the Lean Keccak streaming interface, absorbing it in pieces whose sizes cycle
+/// through `pieces` (a size of 0 is an empty update; at most 255 sizes are used). SHAKE
+/// produces `xof_len` bytes.
+pub fn keccak_stream(variant: KeccakVariant, pieces: &[u16], m: &[u8], xof_len: u16) -> Vec<u8> {
+    let pieces = &pieces[..pieces.len().min(255)];
+    let mut input = Vec::with_capacity(4 + 2 * pieces.len() + m.len());
+    input.push(variant as u8);
+    input.push(pieces.len() as u8);
+    for p in pieces {
+        input.extend_from_slice(&p.to_be_bytes());
+    }
+    input.extend_from_slice(&xof_len.to_be_bytes());
+    input.extend_from_slice(m);
+    call(hs_keccak_stream, &input, variant.output_len(xof_len))
 }

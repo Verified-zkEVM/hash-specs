@@ -104,4 +104,26 @@ proptest! {
     fn random_xof(m in proptest::collection::vec(any::<u8>(), 0..512), d in 0usize..1024) {
         check_xof(&m, d);
     }
+
+    /// Streaming in random pieces gives the one-shot output.
+    #[test]
+    fn streaming_matches_one_shot(
+        m in proptest::collection::vec(any::<u8>(), 0..1024),
+        pieces in proptest::collection::vec(0u16..400, 1..8),
+        d in 0u16..600,
+    ) {
+        use hash_lean::KeccakVariant::*;
+        for v in hash_lean::KeccakVariant::ALL {
+            let expected = match v {
+                Sha3_224 => hash_lean::sha3_224(&m),
+                Sha3_256 => hash_lean::sha3_256(&m),
+                Sha3_384 => hash_lean::sha3_384(&m),
+                Sha3_512 => hash_lean::sha3_512(&m),
+                Shake128 => rust_crypto_xof::<sha3::Shake128>(&m, d as usize),
+                Shake256 => rust_crypto_xof::<sha3::Shake256>(&m, d as usize),
+                Keccak256 => sha3::Keccak256::digest(&m).to_vec(),
+            };
+            prop_assert_eq!(hash_lean::keccak_stream(v, &pieces, &m, d), expected, "{:?} in {:?}", v, &pieces);
+        }
+    }
 }

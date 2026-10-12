@@ -100,4 +100,41 @@ then the message. Returns the empty array on malformed input. -/
   | 5 => streamPieces Hash.sha512t256Init sizes m
   | _ => ByteArray.empty
 
+/-- Absorb `m` into the Keccak state `s` in pieces whose sizes cycle through `sizes`, then
+squeeze `d` bytes. -/
+def keccakStreamPieces (s : Hash.Keccak.Fast.State) (sizes : List Nat) (m : ByteArray)
+    (d : Nat) : ByteArray := Id.run do
+  let mut s := s
+  let mut off := 0
+  let mut i := 0
+  -- If every size were 0 the loop would never advance, so fall back to single bytes.
+  let sizes := if sizes.all (· == 0) then [1] else sizes
+  while off < m.size do
+    let n := sizes.getD (i % sizes.length) 1
+    s := s.update (m.extract off (off + n))
+    off := off + n
+    i := i + 1
+  return s.squeezeBytes d
+
+/-- The Keccak streaming interface, for testing. The input is a variant byte (0–6 for SHA3-224,
+SHA3-256, SHA3-384, SHA3-512, SHAKE128, SHAKE256, Keccak-256), a count `k`, `k` big-endian 16-bit
+piece sizes, a big-endian 16-bit output length (used by SHAKE only), and then the message.
+Returns the empty array on malformed input. -/
+@[export hs_keccak_stream] def keccakStream (input : ByteArray) : ByteArray :=
+  let k := (input.get! 1).toNat
+  if input.size < 4 + 2 * k then ByteArray.empty else
+  let sizes := (List.range k).map fun j =>
+    256 * (input.get! (2 + 2 * j)).toNat + (input.get! (3 + 2 * j)).toNat
+  let d := 256 * (input.get! (2 + 2 * k)).toNat + (input.get! (3 + 2 * k)).toNat
+  let m := input.extract (4 + 2 * k) input.size
+  match (input.get! 0).toNat with
+  | 0 => keccakStreamPieces Hash.sha3x224Init sizes m 28
+  | 1 => keccakStreamPieces Hash.sha3x256Init sizes m 32
+  | 2 => keccakStreamPieces Hash.sha3x384Init sizes m 48
+  | 3 => keccakStreamPieces Hash.sha3x512Init sizes m 64
+  | 4 => keccakStreamPieces Hash.shake128Init sizes m d
+  | 5 => keccakStreamPieces Hash.shake256Init sizes m d
+  | 6 => keccakStreamPieces Hash.keccak256Init sizes m 32
+  | _ => ByteArray.empty
+
 end HashFFI

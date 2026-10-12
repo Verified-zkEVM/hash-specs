@@ -86,6 +86,26 @@ def shakevs (name : String) (xof : ByteArray → Nat → ByteArray) : List TestF
    ⟨s!"nist-cavp-sha3/{name}VariableOut.rsp", id, .xof xof, false⟩,
    ⟨s!"nist-cavp-sha3/{name}Monte.rsp", id, .shakeMonte xof, false⟩]
 
+/-- Hash `m` incrementally with the Keccak state `s` under every pattern of `piecePatterns`,
+squeezing `d` bytes. The result is the common output if all patterns agree, and the empty array
+(which matches no test vector) otherwise. -/
+def keccakStreamed (s : Keccak.Fast.State) (m : ByteArray) (d : Nat) : ByteArray :=
+  let outs := piecePatterns.map (HashFFI.keccakStreamPieces s · m d)
+  match outs with
+  | o :: os => if os.all (· == o) then o else ByteArray.empty
+  | [] => ByteArray.empty
+
+/-- The SHA3VS short- and long-message files of one SHA-3 hash function, hashed incrementally. -/
+def sha3vsStreamed (name : String) (s : Keccak.Fast.State) : List TestFile :=
+  [⟨s!"nist-cavp-sha3/{name}ShortMsg.rsp", (keccakStreamed s · s.outLen), .messages, true⟩,
+   ⟨s!"nist-cavp-sha3/{name}LongMsg.rsp", (keccakStreamed s · s.outLen), .messages, true⟩]
+
+/-- The SHA3VS message files of one SHAKE function, hashed incrementally. -/
+def shakevsStreamed (name : String) (s : Keccak.Fast.State) : List TestFile :=
+  [⟨s!"nist-cavp-sha3/{name}ShortMsg.rsp", id, .xof (keccakStreamed s), true⟩,
+   ⟨s!"nist-cavp-sha3/{name}LongMsg.rsp", id, .xof (keccakStreamed s), true⟩,
+   ⟨s!"nist-cavp-sha3/{name}VariableOut.rsp", id, .xof (keccakStreamed s), true⟩]
+
 /-- Every test file. -/
 def testFiles : List TestFile :=
   shavs "SHA224" sha224 ++ shavs "SHA256" sha256 ++ shavs "SHA384" sha384 ++
@@ -94,7 +114,10 @@ def testFiles : List TestFile :=
   shavsStreamed "SHA384" sha384Init ++ shavsStreamed "SHA512" sha512Init ++
   shavsStreamed "SHA512_224" sha512t224Init ++ shavsStreamed "SHA512_256" sha512t256Init ++
   sha3vs "SHA3_224" sha3x224 ++ sha3vs "SHA3_256" sha3x256 ++ sha3vs "SHA3_384" sha3x384 ++
-  sha3vs "SHA3_512" sha3x512 ++ shakevs "SHAKE128" shake128 ++ shakevs "SHAKE256" shake256
+  sha3vs "SHA3_512" sha3x512 ++ shakevs "SHAKE128" shake128 ++ shakevs "SHAKE256" shake256 ++
+  sha3vsStreamed "SHA3_224" sha3x224Init ++ sha3vsStreamed "SHA3_256" sha3x256Init ++
+  sha3vsStreamed "SHA3_384" sha3x384Init ++ sha3vsStreamed "SHA3_512" sha3x512Init ++
+  shakevsStreamed "SHAKE128" shake128Init ++ shakevsStreamed "SHAKE256" shake256Init
 
 public def main : IO UInt32 := do
   let mut total := 0
@@ -110,9 +133,7 @@ public def main : IO UInt32 := do
     total := total + outcome.passed + outcome.failures.length
     failed := failed + outcome.failures.length
     let status := if outcome.failures.isEmpty then "ok" else "FAILED"
-    let mode := match f.kind with
-      | .messages => if f.streaming then " (streamed)" else ""
-      | _ => ""
+    let mode := if f.streaming then " (streamed)" else ""
     IO.println s!"{status}  {f.path}{mode}: {outcome.passed} passed, {outcome.failures.length} failed"
     for e in outcome.failures.take 5 do
       IO.println s!"        {e}"
