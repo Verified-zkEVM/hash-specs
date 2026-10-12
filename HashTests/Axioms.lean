@@ -38,5 +38,9 @@ audit_axioms Hash.Keccak.Equiv.keccakP_toString Hash.Keccak.Equiv.sponge_eq
   Hash.Keccak.shake128_eq Hash.Keccak.shake256_eq Hash.Keccak.keccak256_eq
   Hash.Keccak.shake128_prefix Hash.Keccak.shake256_prefix
 
+-- Keccak-p is a permutation [FIPS 202, §3.3].
+audit_axioms Hash.Keccak.keccakPState_bijective Hash.Keccak.keccakP_injective
+  Hash.Keccak.keccakP_surjective
+
 -- Constructions.
 audit_axioms Hash.MerkleDamgard.iterate_append Hash.Sponge.sponge_prefix

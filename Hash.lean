@@ -10,6 +10,7 @@ public import Hash.Construction.MerkleDamgard
 public import Hash.Construction.Sponge
 public import Hash.Construction.SpongeLemmas
 public import Hash.Keccak.API
+public import Hash.Keccak.Bijective
 public import Hash.Keccak.Constants
 public import Hash.Keccak.Equiv
 public import Hash.Keccak.Fast
