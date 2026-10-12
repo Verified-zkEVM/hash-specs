@@ -6,9 +6,27 @@ on:
   workflow_dispatch:
 
 jobs:
-  fuzz:
+  # The fuzz targets, read from harness/fuzz/Cargo.toml, so that each runs in its own job.
+  targets:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    outputs:
+      list: ${{ steps.list.outputs.list }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: list
+        run: |
+          list=$(sed -n 's/^name = "\(.*\)"$/\1/p' harness/fuzz/Cargo.toml \
+            | grep -v '^hash-lean-fuzz$' | jq -R . | jq -cs .)
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+
+  fuzz:
+    needs: targets
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(needs.targets.outputs.list) }}
     steps:
       - uses: actions/checkout@v5
       - uses: leanprover/lean-action@v1
@@ -21,17 +39,14 @@ jobs:
         run: lake build HashFFI:static Hash:static
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo install cargo-fuzz --locked
-      - name: Fuzz each target for 30 minutes
+      - name: Fuzz for 30 minutes
         working-directory: harness/fuzz
         env:
           HASH_LEAN_SKIP_LAKE: "1"
-        run: |
-          for target in $(cargo +nightly fuzz list); do
-            cargo +nightly fuzz run "$target" -- -max_total_time=1800 -max_len=65536
-          done
+        run: cargo +nightly fuzz run "${{ matrix.target }}" -- -max_total_time=1800 -max_len=65536
       - name: Keep any crashing inputs
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: fuzz-artifacts
+          name: fuzz-artifacts-${{ matrix.target }}
           path: harness/fuzz/artifacts
