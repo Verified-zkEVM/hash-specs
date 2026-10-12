@@ -74,5 +74,19 @@ fn blake2(c: &mut Criterion) {
     ]);
 }
 
-criterion_group!(benches, sha2, keccak, blake2);
+fn blake3(c: &mut Criterion) {
+    bench_hash(c, "BLAKE3", &[
+        ("lean", &|m| hash_lean::blake3(hash_lean::Blake3Mode::Hash, m, 32)),
+        ("blake3", &|m| blake3::hash(m).as_bytes().to_vec()),
+        ("reference", &|m| {
+            let mut h = blake3_reference::Hasher::new();
+            h.update(m);
+            let mut out = vec![0u8; 32];
+            h.finalize(&mut out);
+            out
+        }),
+    ]);
+}
+
+criterion_group!(benches, sha2, keccak, blake2, blake3);
 criterion_main!(benches);

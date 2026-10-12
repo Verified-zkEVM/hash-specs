@@ -36,6 +36,8 @@ extern "C" {
     fn hs_blake2s(input: *mut lean_object) -> *mut lean_object;
     fn hs_blake2b_f(input: *mut lean_object) -> *mut lean_object;
     fn hs_blake2_stream(input: *mut lean_object) -> *mut lean_object;
+    fn hs_blake3(input: *mut lean_object) -> *mut lean_object;
+    fn hs_blake3_stream(input: *mut lean_object) -> *mut lean_object;
 }
 
 static INIT: Once = Once::new();
@@ -324,4 +326,51 @@ pub fn blake2_stream(
     }
     params.encode(&mut input, m);
     call(hs_blake2_stream, &input, params.out_len as usize)
+}
+
+/// A BLAKE3 mode, with its key or context string.
+#[derive(Clone, Copy, Debug)]
+pub enum Blake3Mode<'a> {
+    /// The `hash` mode.
+    Hash,
+    /// The `keyed_hash` mode with a 32-byte key.
+    Keyed(&'a [u8; 32]),
+    /// The `derive_key` mode with a context string.
+    DeriveKey(&'a [u8]),
+}
+
+impl Blake3Mode<'_> {
+    fn encode(&self, input: &mut Vec<u8>, out_len: usize, m: &[u8]) {
+        let (mode, k): (u8, &[u8]) = match self {
+            Blake3Mode::Hash => (0, &[]),
+            Blake3Mode::Keyed(key) => (1, &key[..]),
+            Blake3Mode::DeriveKey(context) => (2, context),
+        };
+        input.push(mode);
+        input.extend_from_slice(&u32::try_from(out_len).expect("output length fits").to_be_bytes());
+        input.extend_from_slice(&u16::try_from(k.len()).expect("context fits").to_be_bytes());
+        input.extend_from_slice(k);
+        input.extend_from_slice(m);
+    }
+}
+
+/// BLAKE3 in the given mode with `out_len` bytes of output, computed by the Lean fast
+/// specification.
+pub fn blake3(mode: Blake3Mode, m: &[u8], out_len: usize) -> Vec<u8> {
+    let mut input = Vec::with_capacity(7 + m.len() + 64);
+    mode.encode(&mut input, out_len, m);
+    call(hs_blake3, &input, out_len)
+}
+
+/// BLAKE3 with the Lean streaming interface, adding `m` in pieces whose sizes cycle through
+/// `pieces` (a size of 0 is an empty update; at most 255 sizes are used).
+pub fn blake3_stream(mode: Blake3Mode, pieces: &[u16], m: &[u8], out_len: usize) -> Vec<u8> {
+    let pieces = &pieces[..pieces.len().min(255)];
+    let mut input = Vec::with_capacity(8 + 2 * pieces.len() + m.len() + 64);
+    input.push(pieces.len() as u8);
+    for p in pieces {
+        input.extend_from_slice(&p.to_be_bytes());
+    }
+    mode.encode(&mut input, out_len, m);
+    call(hs_blake3_stream, &input, out_len)
 }

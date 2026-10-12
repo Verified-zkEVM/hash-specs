@@ -1,5 +1,5 @@
 [workspace]
-members = ["hash-lean"]
+members = ["hash-lean", "blake3-reference"]
 exclude = ["fuzz"]
 resolver = "2"
 

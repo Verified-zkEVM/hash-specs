@@ -1,0 +1,7 @@
+[package]
+name = "blake3-reference"
+version = "0.0.0"
+edition = "2021"
+license = "CC0-1.0 OR Apache-2.0"
+publish = false
+description = "The BLAKE3 team's reference implementation, vendored unmodified as a test oracle."

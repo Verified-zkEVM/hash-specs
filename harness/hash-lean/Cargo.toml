@@ -24,6 +24,8 @@ blake2 = "0.10"
 blake2b_simd = "1"
 blake2s_simd = "1"
 eip-152 = "0.1.0"
+blake3 = "1"
+blake3-reference = { path = "../blake3-reference" }
 revm-precompile = { version = "43.0.3", default-features = false }
 
 [[bench]]

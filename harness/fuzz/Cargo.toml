@@ -11,6 +11,8 @@ cargo-fuzz = true
 [dependencies]
 aws-lc-rs = "1"
 blake2b_simd = "1"
+blake3 = "1"
+blake3-reference = { path = "../blake3-reference" }
 blake2s_simd = "1"
 hash-lean = { path = "../hash-lean" }
 libfuzzer-sys = "0.4"
@@ -64,6 +66,20 @@ bench = false
 [[bin]]
 name = "blake2b_f"
 path = "fuzz_targets/blake2b_f.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "blake3"
+path = "fuzz_targets/blake3.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "blake3_stream"
+path = "fuzz_targets/blake3_stream.rs"
 test = false
 doc = false
 bench = false
