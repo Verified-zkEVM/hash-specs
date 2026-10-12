@@ -118,9 +118,9 @@ hash-specs/
 │   │   ├── Common/   { SPN, MDS (Cauchy), GrainLFSR, RoundNumbers, Sbox }   # over [Field F]
 │   │   ├── Poseidon/ { Reference, Optimized, Equiv, Instances/{Circom/BN254, …} }  # ZMod p
 │   │   ├── Poseidon2/{ Reference, Instances/{HorizenLabs/BN254, Plonky3/{BabyBear,KoalaBear}, LeanSpec/KoalaBear} }
-│   │   ├── RescuePrime/ { Reference, Instances/{RPO (Miden, Goldilocks)} }
-│   │   ├── MiMC/     { MiMC-n/n, Feistel, MiMCSponge (circomlib) }
-│   │   └── Pedersen/ (blocked on curves, see §5 Phase 5)
+│   │   ├── RescuePrime/ { Reference, Instances/{RPO (Miden, Goldilocks)} }   # Phase 5, optional
+│   │   ├── MiMC/     { MiMC-n/n, Feistel, MiMCSponge (circomlib) }           # Phase 5, optional
+│   │   └── Pedersen/ (blocked on curves; optional, see §5 Phase 5)
 ├── HashTests/                    # Layer 1 tests: small decide-based KAT subset, Plausible
 │                                      #   properties (CSLib-style, upstreamable)
 ├── HashZK/                       # Layer 2: CompPoly fast fields, ring isos to ZMod p
@@ -328,15 +328,16 @@ Sizes are relative (S/M/L/XL), not calendar estimates. Each phase ends with expl
 - Use the circomlib and leanSpec instances already used by `clean` and `ArkLib` as test instances, so later adoption is easy.
 - **Exit:** every listed instance passes its authors' vectors, is fuzzed against two oracles, and has axiom-clean `Equiv` theorems.
 
-### Phase 5: ZK-friendly hashes II (XL; partly blocked)
+### Phase 5: ZK-friendly hashes II (optional, deferred future work; not in v1)
+*Decided 2026-10-12:* the v1 scope ends with Phase 4. This phase is optional and deferred: none of it is on the v1 critical path, and Phase 6 does not wait for it. It is kept here as the plan for whoever picks it up. The README, previously the last step of this phase, moves to Phase 6.
 - **Rescue-Prime** (Szepieniec, Ashur, Dhooghe), including the inverse S-box x^{1/α}, and **RPO** (Miden, Goldilocks).
 - **MiMC:** MiMC-n/n, the Feistel variant, and circomlib's `MiMCSponge` over BN254.
 - **Pedersen hashes** need twisted-Edwards and short-Weierstrass curve arithmetic that CompPoly doesn't provide (ArkLib has BN254 G1 only). Per decision 6, specify the hash over an abstract group first, and add concrete instances (BabyJubJub, Jubjub, the Stark curve) once the curves exist, possibly co-developed in CompPoly, ArkLib or Mathlib.
 - **Stretch candidates**, each needing a short survey of real-world use first: Anemoi, Griffin, Monolith, Tip5, Reinforced Concrete.
-- Finally, write a nice, readable `README.md`: what the library is, which hashes it covers and how far each is assured, how to depend on it, links to the docs site, roadmap and literature review, and how to contribute.
-- **Exit:** per hash, the same criteria as Phase 4, and the README written.
+- **Exit:** per hash, the same criteria as Phase 4.
 
 ### Phase 6: Hardening and v1.0 (M)
+- Write a nice, readable `README.md`: what the library is, which hashes it covers and how far each is assured, how to depend on it, links to the docs site, roadmap and literature review, and how to contribute.
 - An external review of the reference layers against the standards. Ideally an independent reader per family, with sign-off recorded in each chapter's assurance table.
 - Prebuilt release oleans in CompPoly's style (`preferReleaseBuild`), versioning and a changelog.
 - Write or finish the per-repo upstreaming records described in §6, including one for CSLib. They can be started earlier, for example after each family is done.
@@ -345,7 +346,8 @@ Sizes are relative (S/M/L/XL), not calendar estimates. Each phase ends with expl
 **Rough dependency graph:**
 ```
 P0 ──► P1 ──► P2 ──► P3
-          └──► P4 ──► P5          P6 after P3 and P4
+          └──► P4 ··► P5          P6 after P3 and P4
+                                  P5: optional, deferred, outside v1
                                   §6 adoption: whenever ready, outside the v1 critical path
 ```
 P2/P3 and P4 can run in parallel once Phase 1 has proved the pipeline.
