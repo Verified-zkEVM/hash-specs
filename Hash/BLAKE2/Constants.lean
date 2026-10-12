@@ -26,4 +26,8 @@ theorem blake2b_IV : blake2bParams.IV = SHA2.initialHash512 := by decide +kernel
 /-- The BLAKE2s IV is the SHA-256 initial hash value. -/
 theorem blake2s_IV : blake2sParams.IV = SHA2.initialHash256 := by decide +kernel
 
+/-- Each row of `SIGMA` is a permutation of the sixteen message-word indices. -/
+theorem SIGMA_perm : SIGMA.length = 10 ∧ ∀ s ∈ SIGMA, s.Perm (List.range 16) := by
+  decide +kernel
+
 end Hash.BLAKE2

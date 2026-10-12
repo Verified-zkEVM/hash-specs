@@ -101,4 +101,33 @@ def bertoni2008 : InProceedings where
   booktitle := inlines!"Advances in Cryptology – EUROCRYPT 2008, LNCS 4965"
   url := some "https://doi.org/10.1007/978-3-540-78967-3_11"
 
+/-- Aumasson, Neves, Wilcox-O'Hearn and Winnerlein, ACNS 2013: the BLAKE2 design. -/
+def aumasson2013 : InProceedings where
+  title := inlines!"BLAKE2: Simpler, Smaller, Fast as MD5"
+  authors := #[inlines!"Jean-Philippe Aumasson", inlines!"Samuel Neves",
+    inlines!"Zooko Wilcox-O'Hearn", inlines!"Christian Winnerlein"]
+  year := 2013
+  booktitle := inlines!"Applied Cryptography and Network Security (ACNS 2013), LNCS 7954"
+  url := some "https://doi.org/10.1007/978-3-642-38980-1_8"
+
+/-- Guo, Karpman, Nikolić, Wang and Wu, CT-RSA 2014: cryptanalysis of BLAKE2. -/
+def guo2014 : InProceedings where
+  title := inlines!"Analysis of BLAKE2"
+  authors := #[inlines!"Jian Guo", inlines!"Pierre Karpman", inlines!"Ivica Nikolić",
+    inlines!"Lei Wang", inlines!"Shuang Wu"]
+  year := 2014
+  booktitle := inlines!"Topics in Cryptology – CT-RSA 2014"
+  url := some "https://eprint.iacr.org/2013/467"
+
+/-- Luykx, Mennink and Neves, ToSC 2016: security of BLAKE2's modes of operation. -/
+def luykx2016 : Article where
+  title := inlines!"Security Analysis of BLAKE2's Modes of Operation"
+  authors := #[inlines!"Atul Luykx", inlines!"Bart Mennink", inlines!"Samuel Neves"]
+  journal := inlines!"IACR Transactions on Symmetric Cryptology"
+  year := 2016
+  month := none
+  volume := inlines!"2016"
+  number := inlines!"1"
+  url := some "https://doi.org/10.13154/tosc.v2016.i1.158-176"
+
 end HashDocs.Bib

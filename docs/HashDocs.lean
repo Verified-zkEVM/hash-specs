@@ -6,6 +6,7 @@ Authors: Derek Sorensen
 import VersoManual
 import HashDocs.SHA2
 import HashDocs.SHA3
+import HashDocs.BLAKE2
 
 open Verso.Genre Manual
 
@@ -22,3 +23,5 @@ fast specification against independent implementations.
 {include 1 HashDocs.SHA2}
 
 {include 1 HashDocs.SHA3}
+
+{include 1 HashDocs.BLAKE2}

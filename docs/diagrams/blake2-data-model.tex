@@ -1,0 +1,31 @@
+% The BLAKE2 data model [RFC 7693, §2.4]: message bytes form w-bit words in little-endian order
+% (w = 64 for BLAKE2b, 32 for BLAKE2s), and the digest is the chain value written out in
+% little-endian order.
+% Original drawing for the Hash library.
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\input{style}
+\begin{document}
+\begin{tikzpicture}
+  \def\bw{1.25}
+  \foreach \v [count=\i from 0] in {61,62,63,00,00,00,00,00} {
+    \node[input, minimum width=11mm] (B\i) at (\i*\bw, 0) {\texttt{0x\v}};
+  }
+  \node[anchor=east] at ($(B0.west)+(-0.25,0)$) {bytes};
+  \node[reg, minimum width=8*\bw cm - 2mm, fill=hsorange!25] (W)
+    at ($(B0)!0.5!(B7)+(0,-2.0)$) {word $m[0] = \mathtt{0x0000000000636261}$};
+  \node[anchor=east] at ($(W.west)+(-0.25,0)$) {word};
+  \foreach \i in {0,...,7} {
+    \draw[wire] (B\i.south) .. controls +(0,-0.8) and +(0,0.6)
+      .. ($(W.north east)!{(\i+0.5)/8}!(W.north west)$);
+  }
+  \node[anchor=north, font=\sffamily\footnotesize, align=center] at (W.south)
+    {little-endian: the first byte is the least significant\\
+     BLAKE2b: 8 bytes per 64-bit word \quad BLAKE2s: 4 bytes per 32-bit word};
+  \begin{scope}[on background layer]
+    \node[card, fit=(B0)(B7)(W), inner sep=10pt, xshift=-4mm, minimum width=11.4cm,
+      minimum height=4.4cm, yshift=-3mm] {};
+  \end{scope}
+\end{tikzpicture}
+\end{document}

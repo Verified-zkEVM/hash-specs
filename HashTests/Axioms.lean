@@ -42,8 +42,8 @@ audit_axioms Hash.Keccak.Equiv.keccakP_toString Hash.Keccak.Equiv.sponge_eq
 audit_axioms Hash.Keccak.keccakPState_bijective Hash.Keccak.keccakP_injective
   Hash.Keccak.keccakP_surjective
 
--- BLAKE2 IVs are the SHA-2 initial values [RFC 7693, §2.6].
-audit_axioms Hash.BLAKE2.blake2b_IV Hash.BLAKE2.blake2s_IV
+-- BLAKE2 constants: SHA-2 IVs, SIGMA rows are permutations [RFC 7693, §2.6, §2.7].
+audit_axioms Hash.BLAKE2.blake2b_IV Hash.BLAKE2.blake2s_IV Hash.BLAKE2.SIGMA_perm
 
 -- BLAKE2: the fast specification equals the reference [RFC 7693; EIP-152].
 audit_axioms Hash.BLAKE2.Equiv.hashWith_eq Hash.BLAKE2.Equiv.F_eq Hash.BLAKE2.blake2bWith_eq
