@@ -151,3 +151,23 @@ from the source below; the SHA-256 of every file is listed so that the copies ca
 | File | SHA-256 |
 |---|---|
 | `circomlib-bn254.json` | `9afc6c87f5805375bed3755d8cc344087c9c12f3d8ae1ea74917049f9b9d962e` |
+
+## `poseidon2/`: Poseidon2 permutations
+
+- **Sources:** extracted by a script, without changing any value, from the tests of the reference
+  implementation and of Plonky3:
+  - `src/poseidon2/poseidon2.rs` of the `zkhash` crate 0.2.0 (HorizenLabs' reference
+    implementation, <https://github.com/HorizenLabs/poseidon2>; MIT or Apache-2.0):
+    `poseidon2_tests_bn256::kats`, the BN254 width-3 permutation of `[0, 1, 2]`;
+  - `src/poseidon2.rs` of the crates `p3-baby-bear` 0.8.0 and `p3-koala-bear` 0.8.0
+    (<https://github.com/Plonky3/Plonky3>; MIT or Apache-2.0):
+    `test_default_{babybear,koalabear}_poseidon2_width_{16,24}`.
+- **Format:** a JSON array of records with the source, the `instance`, and the `input` and
+  `output` states as decimal strings. `hash-kat` checks each record with the specification over
+  `ZMod p` and with the fast implementation over CompPoly's Montgomery representations.
+- **Version note:** Plonky3 releases before the KoalaBear fix of commit `0056fa83` (2026-03-09)
+  give different KoalaBear outputs; these vectors are those of 0.8.0.
+
+| File | SHA-256 |
+|---|---|
+| `kats.json` | `0ecce3b198c54a11e6ad0ec7eb70074a5492b349f73ce44f0e4809219ae19112` |

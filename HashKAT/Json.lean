@@ -104,4 +104,30 @@ def runPoseidonJson (hash : Nat → List Nat → Nat → List Nat) (contents : S
     | none => failures := s!"record {i}: bad initState" :: failures
   return ⟨passed, failures.reverse⟩
 
+/-- Check the records of a permutation vector file: the `instance` name, and the `input` and
+asserted `output` states as lists of decimal strings, with `perm instance input` returning the
+output state, or `none` for an instance it does not cover. -/
+def runPermutationJson (perm : String → List Nat → Option (List Nat)) (contents : String) :
+    Outcome := Id.run do
+  let .ok json := Json.parse contents | return ⟨0, ["bad JSON"]⟩
+  let .ok records := json.getArr? | return ⟨0, ["expected a JSON array"]⟩
+  let mut passed := 0
+  let mut failures : List String := []
+  let mut i := 0
+  for r in records do
+    i := i + 1
+    let num (j : Json) : Option Nat := (j.getStr?.toOption).bind String.toNat?
+    let (.ok inst, .ok ins, .ok outs) := (r.getObjValAs? String "instance",
+        (r.getObjVal? "input").bind Json.getArr?, (r.getObjVal? "output").bind Json.getArr?)
+      | failures := s!"record {i}: bad fields" :: failures; continue
+    let input := ins.toList.filterMap num
+    let expected := outs.toList.filterMap num
+    match perm inst input with
+    | some got =>
+      if got == expected && input.length == ins.size && expected.length == outs.size then
+        passed := passed + 1
+      else failures := s!"record {i} ({inst})" :: failures
+    | none => failures := s!"record {i}: unknown instance {inst}" :: failures
+  return ⟨passed, failures.reverse⟩
+
 end HashKAT

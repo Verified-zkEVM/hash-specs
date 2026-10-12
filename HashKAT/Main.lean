@@ -47,6 +47,8 @@ inductive Kind where
   | eip152 (f : ByteArray → Except String ByteArray)
   /-- Poseidon records: `hash initState inputs nOut`, on natural numbers below the modulus. -/
   | poseidonJson (name : String) (f : Nat → List Nat → Nat → List Nat)
+  /-- Permutation records: `perm instance input`, on natural numbers below the modulus. -/
+  | permutationJson (name : String) (f : String → List Nat → Option (List Nat))
 
 /-- A test file and the function it tests. -/
 structure TestFile where
@@ -161,6 +163,52 @@ def poseidonFiles : List TestFile :=
         (ins.map fun x => (x : HashZK.Poseidon.Circom.Fr)).toArray nOut).map
         (HashZK.Poseidon.Circom.toZMod · |>.val), false⟩]
 
+/-- A Plonky3 Poseidon2 instance by the specification over `ZMod p`. -/
+def poseidon2Plonky3Ref (I : ZK.Poseidon2.Plonky3) (xs : List Nat) : List Nat :=
+  (I.permutation (Vector.ofFn fun i => (xs.getD i.val 0 : ZMod I.p))).toList.map (·.val)
+
+/-- Poseidon2 by the specification over `ZMod p`. -/
+def poseidon2Ref (inst : String) (xs : List Nat) : Option (List Nat) :=
+  match inst with
+  | "plonky3-babybear-16" => some (poseidon2Plonky3Ref ZK.Poseidon2.babyBear16 xs)
+  | "plonky3-babybear-24" => some (poseidon2Plonky3Ref ZK.Poseidon2.babyBear24 xs)
+  | "plonky3-koalabear-16" => some (poseidon2Plonky3Ref ZK.Poseidon2.koalaBear16 xs)
+  | "plonky3-koalabear-24" => some (poseidon2Plonky3Ref ZK.Poseidon2.koalaBear24 xs)
+  | "horizenlabs-bn254-3" =>
+    some ((ZK.Poseidon2.hlBn254Permutation
+      (Vector.ofFn fun i => (xs.getD i.val 0 : ZMod ZK.bn254))).toList.map (·.val))
+  | _ => none
+
+/-- A BabyBear permutation on natural numbers, through CompPoly's representation. -/
+def onBB {n : Nat} (f : Vector HashZK.Poseidon2.BB n → Vector HashZK.Poseidon2.BB n)
+    (xs : List Nat) : List Nat :=
+  (f (Vector.ofFn fun i => (xs.getD i.val 0 : HashZK.Poseidon2.BB))).toList.map
+    fun x => (BabyBear.Fast.ringEquiv x).val
+
+/-- A KoalaBear permutation on natural numbers, through CompPoly's representation. -/
+def onKB {n : Nat} (f : Vector HashZK.Poseidon2.KB n → Vector HashZK.Poseidon2.KB n)
+    (xs : List Nat) : List Nat :=
+  (f (Vector.ofFn fun i => (xs.getD i.val 0 : HashZK.Poseidon2.KB))).toList.map
+    fun x => (KoalaBear.Fast.ringEquiv x).val
+
+/-- Poseidon2 by the fast implementation over CompPoly's Montgomery representations. -/
+def poseidon2CompPoly (inst : String) (xs : List Nat) : Option (List Nat) :=
+  match inst with
+  | "plonky3-babybear-16" => some (onBB HashZK.Poseidon2.babyBear16 xs)
+  | "plonky3-babybear-24" => some (onBB HashZK.Poseidon2.babyBear24 xs)
+  | "plonky3-koalabear-16" => some (onKB HashZK.Poseidon2.koalaBear16 xs)
+  | "plonky3-koalabear-24" => some (onKB HashZK.Poseidon2.koalaBear24 xs)
+  | "horizenlabs-bn254-3" =>
+    some ((HashZK.Poseidon2.hlBn254
+      (Vector.ofFn fun i => (xs.getD i.val 0 : HashZK.Poseidon2.Fr))).toList.map
+        fun x => (HashZK.Poseidon.Circom.toZMod x).val)
+  | _ => none
+
+/-- Poseidon2, by the specification and by the fast implementation. -/
+def poseidon2Files : List TestFile :=
+  [⟨"poseidon2/kats.json", id, .permutationJson "reference" poseidon2Ref, false⟩,
+   ⟨"poseidon2/kats.json", id, .permutationJson "CompPoly" poseidon2CompPoly, false⟩]
+
 /-- Every test file. -/
 def testFiles : List TestFile :=
   shavs "SHA224" sha224 ++ shavs "SHA256" sha256 ++ shavs "SHA384" sha384 ++
@@ -184,7 +232,7 @@ def testFiles : List TestFile :=
       .blake2Json "blake2s" fun key m nn => blake2Streamed (blake2sInit key .empty .empty nn) m,
       true⟩,
    ⟨"eip-152/vectors.txt", id, .eip152 blake2bPrecompile, false⟩] ++
-  blake3Files ++ poseidonFiles
+  blake3Files ++ poseidonFiles ++ poseidon2Files
 
 public def main : IO UInt32 := do
   let mut total := 0
@@ -202,11 +250,13 @@ public def main : IO UInt32 := do
       -- EIP-152 vector 8 (2³² − 1 rounds) is skipped: too slow for a specification.
       | .eip152 f => runEip152 f 1000000 contents
       | .poseidonJson _ f => runPoseidonJson f contents
+      | .permutationJson _ f => runPermutationJson f contents
     total := total + outcome.passed + outcome.failures.length
     failed := failed + outcome.failures.length
     let status := if outcome.failures.isEmpty then "ok" else "FAILED"
     let mode := match f.kind with
-      | .blake2Json name _ | .blake3Json name _ | .poseidonJson name _ =>
+      | .blake2Json name _ | .blake3Json name _ | .poseidonJson name _
+      | .permutationJson name _ =>
         if f.streaming then s!" ({name}, streamed)" else s!" ({name})"
       | _ => if f.streaming then " (streamed)" else ""
     let counts := s!"{outcome.passed} passed, {outcome.failures.length} failed"

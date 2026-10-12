@@ -22,3 +22,7 @@ audit_axioms HashZK.Poseidon.Circom.permutation_eq HashZK.Poseidon.Circom.poseid
 -- The raw limbs of the C exports preserve the operations, and compute circomlib's Poseidon.
 audit_axioms HashZK.Raw.BN254.hom_toRaw HashZK.Raw.BN254.toNat_toRaw
   HashZK.Raw.Poseidon.poseidonNat_eq
+
+-- Poseidon2: the instances over CompPoly's fields compute their specifications.
+audit_axioms HashZK.Poseidon2.babyBear16_eq HashZK.Poseidon2.babyBear24_eq
+  HashZK.Poseidon2.koalaBear16_eq HashZK.Poseidon2.koalaBear24_eq HashZK.Poseidon2.hlBn254_eq

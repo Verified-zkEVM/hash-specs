@@ -7,6 +7,7 @@ module
 
 public import CompPoly.Fields.BN254
 public import HashZK.Poseidon.Circom
+public import HashZK.Poseidon2
 public import HashZK.Raw.BN254
 public import HashZK.Raw.Equiv
 public import HashZK.Raw.Poseidon
