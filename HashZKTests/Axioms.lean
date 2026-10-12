@@ -26,3 +26,6 @@ audit_axioms HashZK.Raw.BN254.hom_toRaw HashZK.Raw.BN254.toNat_toRaw
 -- Poseidon2: the instances over CompPoly's fields compute their specifications.
 audit_axioms HashZK.Poseidon2.babyBear16_eq HashZK.Poseidon2.babyBear24_eq
   HashZK.Poseidon2.koalaBear16_eq HashZK.Poseidon2.koalaBear24_eq HashZK.Poseidon2.hlBn254_eq
+audit_axioms HashZK.Raw.ModP.hom_toZMod HashZK.Raw.Poseidon2.babyBear16_eq
+  HashZK.Raw.Poseidon2.babyBear24_eq HashZK.Raw.Poseidon2.koalaBear16_eq
+  HashZK.Raw.Poseidon2.koalaBear24_eq HashZK.Raw.Poseidon2.hlBn254_eq

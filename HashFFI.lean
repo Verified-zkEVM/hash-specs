@@ -7,3 +7,4 @@ module
 
 public import HashFFI.Export
 public import HashFFI.Poseidon
+public import HashFFI.Poseidon2

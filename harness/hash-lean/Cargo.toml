@@ -32,6 +32,14 @@ ark-bn254 = "0.5"
 ark-ff = "0.5"
 poseidon-rs = "0.0.10"
 ff = { version = "0.11", package = "ff_ce" }
+p3-koala-bear = "0.8"
+p3-baby-bear = "0.8"
+p3-poseidon2 = "0.8"
+p3-field = "0.8"
+p3-symmetric = "0.8"
+p3-bn254 = "0.8"
+zkhash = "0.2.0"
+num-bigint = "0.5"
 
 [[bench]]
 name = "throughput"

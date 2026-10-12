@@ -11,8 +11,7 @@ use libfuzzer_sys::fuzz_target;
 use light_poseidon::{Poseidon, PoseidonHasher};
 
 fuzz_target!(|data: &[u8]| {
-    let inputs: Vec<[u8; 32]> =
-        data.chunks_exact(32).take(16).map(|c| c.try_into().unwrap()).collect();
+    let inputs: Vec<[u8; 32]> = data.as_chunks::<32>().0.iter().take(16).copied().collect();
     if inputs.is_empty() {
         return;
     }

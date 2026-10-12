@@ -10,7 +10,11 @@ public import HashZK.Poseidon.Circom
 public import HashZK.Poseidon2
 public import HashZK.Raw.BN254
 public import HashZK.Raw.Equiv
+public import HashZK.Raw.ModP
+public import HashZK.Raw.ModPEquiv
 public import HashZK.Raw.Poseidon
+public import HashZK.Raw.Poseidon2
+public import HashZK.Raw.Poseidon2Equiv
 
 /-!
 # Layer 2: CompPoly integration

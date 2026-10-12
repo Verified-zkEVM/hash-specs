@@ -28,6 +28,8 @@ with independent implementations (ROADMAP.md §4).
 | BLAKE2b `F` precompile (EIP-152) | `Hash.blake2bPrecompile` | `revm-precompile`, `eip-152` |
 | BLAKE3 (`hash`, `keyed_hash`, `derive_key`, any output length) | `Hash.blake3Xof`, `Hash.blake3Keyed`, `Hash.blake3DeriveKey`, `Hash.blake3*Init` (streaming) | `blake3`, the BLAKE3 team's reference implementation (`blake3-reference/`, vendored) |
 | Poseidon, circomlib's BN254 instances (1 to 16 inputs) | `HashZK.Raw.Poseidon.poseidonNat` (proved equal to `Hash.ZK.Poseidon.Circom.poseidon`) | `poseidon-rs` (all widths), `light-poseidon` (up to 12 inputs) |
+| Poseidon2: Plonky3 BabyBear and KoalaBear, widths 16 and 24 | `HashZK.Raw.Poseidon2.*` (proved equal to `Hash.ZK.Poseidon2.Plonky3.permutation`) | Plonky3 0.8.0, scalar and SIMD (packed) code paths |
+| Poseidon2: HorizenLabs BN254, width 3 | `HashZK.Raw.Poseidon2.hlBn254` (proved equal to `Hash.ZK.Poseidon2.hlBn254Permutation`) | `zkhash` (HorizenLabs' reference), Plonky3's `p3-bn254` with `zkhash`'s constants |
 
 Lineage: RustCrypto `sha3` and `tiny-keccak` are independent Rust implementations; AWS-LC's SHA-3
 descends from BoringSSL/OpenSSL. `alloy-primitives::keccak256` uses `tiny-keccak` by default, so
@@ -41,7 +43,10 @@ by the same team as the `blake3` crate but shares no code with it: it is a minim
 implementation, vendored unmodified in `blake3-reference/`. `poseidon-rs` (iden3) carries
 circomlib's published constant tables, and `light-poseidon` (Light Protocol) constants generated
 with the Poseidon reference script; the Lean specification derives its constants from the Grain
-LFSR itself, so agreement also checks the constants.
+LFSR itself, so agreement also checks the constants. For Poseidon2, Plonky3 is the only
+implementation of its BabyBear and KoalaBear instances (SP1's is a fork), so the tests compare
+against two code paths of Plonky3 rather than two implementations; Plonky3's BN254 permutation
+takes its constants from `zkhash`, so only its permutation code is independent of `zkhash`.
 
 ```sh
 cd hash-lean && cargo test --release          # differential tests

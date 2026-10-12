@@ -39,6 +39,7 @@ extern "C" {
     fn hs_blake3(input: *mut lean_object) -> *mut lean_object;
     fn hs_blake3_stream(input: *mut lean_object) -> *mut lean_object;
     fn hs_poseidon_circom(input: *mut lean_object) -> *mut lean_object;
+    fn hs_poseidon2(input: *mut lean_object) -> *mut lean_object;
 }
 
 static INIT: Once = Once::new();
@@ -267,12 +268,7 @@ pub struct Blake2Params<'a> {
 impl Blake2Params<'_> {
     fn encode(&self, input: &mut Vec<u8>, m: &[u8]) {
         let len = |b: &[u8]| u8::try_from(b.len()).expect("parameter fits in 255 bytes");
-        input.extend_from_slice(&[
-            self.out_len,
-            len(self.key),
-            len(self.salt),
-            len(self.personal),
-        ]);
+        input.extend_from_slice(&[self.out_len, len(self.key), len(self.salt), len(self.personal)]);
         input.extend_from_slice(self.key);
         input.extend_from_slice(self.salt);
         input.extend_from_slice(self.personal);
@@ -383,4 +379,41 @@ pub fn poseidon_circom(inputs: &[[u8; 32]]) -> Option<[u8; 32]> {
     let input: Vec<u8> = inputs.concat();
     let out = call(hs_poseidon_circom, &input, 32);
     out.try_into().ok()
+}
+
+/// A Poseidon2 instance.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Poseidon2Instance {
+    /// Plonky3's BabyBear, width 16.
+    BabyBear16 = 0,
+    /// Plonky3's BabyBear, width 24.
+    BabyBear24 = 1,
+    /// Plonky3's KoalaBear, width 16.
+    KoalaBear16 = 2,
+    /// Plonky3's KoalaBear, width 24.
+    KoalaBear24 = 3,
+    /// HorizenLabs' BN254, width 3.
+    HorizenLabsBn254 = 4,
+}
+
+impl Poseidon2Instance {
+    /// The width and the size of an element in bytes.
+    pub fn shape(self) -> (usize, usize) {
+        match self {
+            Poseidon2Instance::BabyBear16 | Poseidon2Instance::KoalaBear16 => (16, 4),
+            Poseidon2Instance::BabyBear24 | Poseidon2Instance::KoalaBear24 => (24, 4),
+            Poseidon2Instance::HorizenLabsBn254 => (3, 32),
+        }
+    }
+}
+
+/// A Poseidon2 permutation, computed by the Lean fast specification. The state is the
+/// concatenation of big-endian elements (4 bytes for the 31-bit fields, 32 bytes for BN254),
+/// reduced modulo the field order. Returns `None` if the state has the wrong length.
+pub fn poseidon2(instance: Poseidon2Instance, state: &[u8]) -> Option<Vec<u8>> {
+    let (t, k) = instance.shape();
+    let mut input = vec![instance as u8];
+    input.extend_from_slice(state);
+    let out = call(hs_poseidon2, &input, t * k);
+    (out.len() == t * k).then_some(out)
 }

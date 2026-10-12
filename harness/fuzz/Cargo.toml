@@ -26,6 +26,11 @@ ark-ff = "0.5"
 poseidon-rs = "0.0.10"
 hex = "0.4"
 ff = { version = "0.11", package = "ff_ce" }
+p3-koala-bear = "0.8"
+p3-baby-bear = "0.8"
+p3-field = "0.8"
+p3-symmetric = "0.8"
+zkhash = "0.2.0"
 
 [[bin]]
 name = "sha2"
@@ -93,6 +98,13 @@ bench = false
 [[bin]]
 name = "poseidon"
 path = "fuzz_targets/poseidon.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "poseidon2"
+path = "fuzz_targets/poseidon2.rs"
 test = false
 doc = false
 bench = false
