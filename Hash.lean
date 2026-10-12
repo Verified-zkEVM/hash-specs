@@ -12,6 +12,7 @@ public import Hash.BLAKE2.Equiv
 public import Hash.BLAKE2.Fast
 public import Hash.BLAKE2.Reference
 public import Hash.BLAKE3.API
+public import Hash.BLAKE3.Equiv
 public import Hash.BLAKE3.Fast
 public import Hash.BLAKE3.Reference
 public import Hash.BLAKE3.Stream

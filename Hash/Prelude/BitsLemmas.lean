@@ -187,4 +187,31 @@ theorem chunks_flatten {α : Type} (n : Nat) (hn : 0 < n) (ls : List (List α))
     rw [List.flatten_cons, chunks_append n hn _ _ (h l (by simp)),
       ih (fun l hl => h l (by simp [hl]))]
 
+/-- `chunks` as a list of slices: `⌈len / n⌉` pieces of `n` elements, the last possibly
+shorter. -/
+theorem chunks_eq_map_range {α : Type} (n : Nat) (hn : 0 < n) (l : List α) :
+    chunks n l = (List.range ((l.length + n - 1) / n)).map fun i => (l.drop (i * n)).take n := by
+  induction h : l.length using Nat.strongRecOn generalizing l with
+  | _ L ih =>
+    cases l with
+    | nil =>
+      simp only [List.length_nil] at h
+      subst h
+      simp [chunks_nil, hn]
+    | cons x xs =>
+      rw [chunks_of_ne_nil n hn _ (List.cons_ne_nil x xs),
+        ih (L - n) (by simp at h; omega) _ (by simp [← h])]
+      have hL : (L + n - 1) / n = (L - n + n - 1) / n + 1 := by
+        by_cases hLn : L < n
+        · rw [Nat.div_eq_of_lt_le (k := 1) (by simp at h; omega) (by omega),
+            show L - n + n - 1 = n - 1 by omega, Nat.div_eq_of_lt (by omega)]
+        · rw [show L + n - 1 = (L - n + n - 1) + n by omega, Nat.add_div_right _ hn]
+      rw [hL, List.range_succ_eq_map]
+      simp only [List.map_cons, List.map_map, Nat.zero_mul, List.drop_zero]
+      congr 1
+      apply List.map_congr_left
+      intro i _
+      simp only [Function.comp, List.drop_drop, Nat.succ_mul]
+      rw [Nat.add_comm n (i * n)]
+
 end Hash

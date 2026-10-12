@@ -69,7 +69,7 @@ def wordsLE (bs : List UInt8) : List Word := BLAKE2.Reference.wordsLE BLAKE2.bla
 
 /-- The little-endian bytes of a list of words. -/
 def wordsToBytes (ws : List Word) : List UInt8 :=
-  ws.flatMap (BLAKE2.Reference.bytesLE BLAKE2.blake2sParams)
+  ws.flatMap fun w => (List.range 4).map fun i => (w.toNat / 2 ^ (8 * i)).toUInt8
 
 /-- One round: `G` on the columns, then on the diagonals, with the message words in order. This
 is the round of BLAKE2s [BLAKE3, §2.2]. -/

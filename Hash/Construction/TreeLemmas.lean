@@ -330,4 +330,28 @@ theorem finish_pushAll (xs : List α) (hxs : xs ≠ []) :
     · exact .inl h0
     · exact .inr (lowbit_pos h0)
 
+/-! ### Changing representation -/
+
+/-- `root` commutes with a change of representation of the leaves, nodes and chaining values
+that commutes with `leaf`, `parent` and `cv`. -/
+theorem root_map {α' β' γ' : Type} [Inhabited α'] (leaf' : Nat → α' → γ')
+    (parent' : β' → β' → γ') (cv' : γ' → β') (f : γ → γ') (g : β → β') (h : α → α')
+    (hdef : h default = default) (hleaf : ∀ i x, f (leaf i x) = leaf' i (h x))
+    (hparent : ∀ a b, f (parent a b) = parent' (g a) (g b)) (hcv : ∀ o, g (cv o) = cv' (f o))
+    (xs : List α) (off : Nat) :
+    f (root leaf parent cv xs off) = root leaf' parent' cv' (xs.map h) off := by
+  unfold root
+  rw [List.length_map]
+  generalize xs.length = fuel
+  induction fuel generalizing xs off with
+  | zero =>
+    simp only [rootAux, hleaf]
+    cases xs <;> simp [hdef]
+  | succ fuel ih =>
+    simp only [rootAux, List.length_map]
+    split
+    · rw [hleaf]
+      cases xs <;> simp [hdef]
+    · rw [hparent, hcv, hcv, ih, ih, List.map_take, List.map_drop]
+
 end Hash.Tree
