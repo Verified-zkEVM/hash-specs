@@ -11,6 +11,10 @@ public import Hash.BLAKE2.Constants
 public import Hash.BLAKE2.Equiv
 public import Hash.BLAKE2.Fast
 public import Hash.BLAKE2.Reference
+public import Hash.BLAKE3.API
+public import Hash.BLAKE3.Fast
+public import Hash.BLAKE3.Reference
+public import Hash.BLAKE3.Stream
 public import Hash.Construction.MerkleDamgard
 public import Hash.Construction.Sponge
 public import Hash.Construction.SpongeLemmas
