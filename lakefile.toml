@@ -51,6 +51,11 @@ globs = ["HashTests.+"]
 [[lean_lib]]
 name = "HashZK"
 
+# Layer 2 tests: the axiom audit of the Layer 2 theorems.
+[[lean_lib]]
+name = "HashZKTests"
+globs = ["HashZKTests.+"]
+
 # Layer 3: C-ABI entry points used by the Rust differential-testing harness.
 [[lean_lib]]
 name = "HashFFI"

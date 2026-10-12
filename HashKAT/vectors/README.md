@@ -127,3 +127,27 @@ from the source below; the SHA-256 of every file is listed so that the copies ca
 | File | SHA-256 |
 |---|---|
 | `test_vectors.json` | `dcb91ea8accc77e6d6e632af7cdc1a99a9f3ae78cf648da595c7d064db32f624` |
+
+## `poseidon/`: circomlib's Poseidon over BN254
+
+- **Sources:** there is no official vector file, so the vectors were extracted (by a script, without
+  changing any value) from the test suites of three implementations of the circomlib instances:
+  - `poseidon/poseidon_test.go` of <https://github.com/iden3/go-iden3-crypto> at commit
+    `4c63aa32ab1f2a4ff949aa81bbb90b8533e66df6` (`Hash` and `HashEx`; Apache-2.0 or MIT);
+  - `light-poseidon/tests/bn254_fq_x5.rs` of <https://github.com/Lightprotocol/light-poseidon> at
+    commit `5a796b5f8d20776729599a0635470551f205319e` (`TEST_CASES`: the hash of `n` ones for
+    `n = 1 … 12`; Apache-2.0);
+  - `code/test_vectors.txt` of the Poseidon reference implementation
+    <https://extgit.iaik.tugraz.at/krypto/hadeshash> at commit
+    `208b5a164c6a252b137997694d90931b2bb851c5` (`poseidonperm_x5_254_3` and `_5`, whole
+    permutations; MIT-style licence).
+- **Format:** a JSON array of records with the source, the initial capacity element `initState`,
+  the `inputs`, and the asserted `outputs` as pairs of an index into the output state and a value,
+  all as decimal strings. `hash-kat` checks each record with the specification over `ZMod bn254`
+  and with the fast implementation over CompPoly's Montgomery representation.
+- **Coverage:** widths 2–13, 15 and 17. No upstream test covers widths 14 and 16; the differential
+  tests in `harness/` do.
+
+| File | SHA-256 |
+|---|---|
+| `circomlib-bn254.json` | `9afc6c87f5805375bed3755d8cc344087c9c12f3d8ae1ea74917049f9b9d962e` |

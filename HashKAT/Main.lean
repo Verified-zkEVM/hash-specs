@@ -12,6 +12,7 @@ public import Hash.BLAKE2.API
 public import Hash.BLAKE3.API
 public import HashKAT.Json
 public import HashFFI.Export
+public import HashZK
 
 /-!
 # Known-answer test runner
@@ -44,6 +45,8 @@ inductive Kind where
   | blake3Json (mode : String) (f : ByteArray → ByteArray → ByteArray → Nat → ByteArray)
   /-- EIP-152 records for the BLAKE2b `F` precompile. -/
   | eip152 (f : ByteArray → Except String ByteArray)
+  /-- Poseidon records: `hash initState inputs nOut`, on natural numbers below the modulus. -/
+  | poseidonJson (name : String) (f : Nat → List Nat → Nat → List Nat)
 
 /-- A test file and the function it tests. -/
 structure TestFile where
@@ -146,6 +149,18 @@ def blake3Files : List TestFile :=
    ⟨file, id, .blake3Json "derive_key" fun _ c m d =>
       blake3Streamed (blake3DeriveKeyInit c) m d, true⟩]
 
+/-- circomlib's Poseidon, by the specification over `ZMod bn254` and by the fast
+implementation over CompPoly's Montgomery representation. -/
+def poseidonFiles : List TestFile :=
+  let file := "poseidon/circomlib-bn254.json"
+  [⟨file, id, .poseidonJson "reference" fun init ins nOut =>
+      (ZK.Poseidon.Circom.poseidonEx ins.length (init : ZMod ZK.bn254)
+        (fun i => (ins[i] : ZMod ZK.bn254)) nOut).map (·.val), false⟩,
+   ⟨file, id, .poseidonJson "CompPoly" fun init ins nOut =>
+      (HashZK.Poseidon.Circom.poseidonEx (init : HashZK.Poseidon.Circom.Fr)
+        (ins.map fun x => (x : HashZK.Poseidon.Circom.Fr)).toArray nOut).map
+        (HashZK.Poseidon.Circom.toZMod · |>.val), false⟩]
+
 /-- Every test file. -/
 def testFiles : List TestFile :=
   shavs "SHA224" sha224 ++ shavs "SHA256" sha256 ++ shavs "SHA384" sha384 ++
@@ -169,7 +184,7 @@ def testFiles : List TestFile :=
       .blake2Json "blake2s" fun key m nn => blake2Streamed (blake2sInit key .empty .empty nn) m,
       true⟩,
    ⟨"eip-152/vectors.txt", id, .eip152 blake2bPrecompile, false⟩] ++
-  blake3Files
+  blake3Files ++ poseidonFiles
 
 public def main : IO UInt32 := do
   let mut total := 0
@@ -186,14 +201,16 @@ public def main : IO UInt32 := do
       | .blake3Json mode f => runBlake3Json mode f contents
       -- EIP-152 vector 8 (2³² − 1 rounds) is skipped: too slow for a specification.
       | .eip152 f => runEip152 f 1000000 contents
+      | .poseidonJson _ f => runPoseidonJson f contents
     total := total + outcome.passed + outcome.failures.length
     failed := failed + outcome.failures.length
     let status := if outcome.failures.isEmpty then "ok" else "FAILED"
     let mode := match f.kind with
-      | .blake2Json name _ | .blake3Json name _ =>
+      | .blake2Json name _ | .blake3Json name _ | .poseidonJson name _ =>
         if f.streaming then s!" ({name}, streamed)" else s!" ({name})"
       | _ => if f.streaming then " (streamed)" else ""
-    IO.println s!"{status}  {f.path}{mode}: {outcome.passed} passed, {outcome.failures.length} failed"
+    let counts := s!"{outcome.passed} passed, {outcome.failures.length} failed"
+    IO.println s!"{status}  {f.path}{mode}: {counts}"
     for e in outcome.failures.take 5 do
       IO.println s!"        {e}"
   if failed == 0 then

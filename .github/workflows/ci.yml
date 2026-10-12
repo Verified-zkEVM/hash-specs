@@ -38,7 +38,7 @@ jobs:
       - name: Environment linters
         run: lake lint
       - name: Build the other Lean libraries
-        run: lake build --wfail HashZK HashFFI hash-kat
+        run: lake build --wfail HashZK HashZKTests HashFFI hash-kat
       - name: Full known-answer test suites
         run: lake exe hash-kat
 

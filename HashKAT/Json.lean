@@ -72,4 +72,36 @@ def runBlake3Json (mode : String)
     | _, _ => failures := "bad case" :: failures
   return ⟨passed, failures.reverse⟩
 
+/-- Check the records of a Poseidon vector file: lists of `initState`, `inputs` and asserted
+`outputs` (pairs of an output index and a value), all decimal strings, with
+`hash initState inputs nOut` returning the first `nOut` output elements. -/
+def runPoseidonJson (hash : Nat → List Nat → Nat → List Nat) (contents : String) : Outcome :=
+  Id.run do
+  let .ok json := Json.parse contents | return ⟨0, ["bad JSON"]⟩
+  let .ok records := json.getArr? | return ⟨0, ["expected a JSON array"]⟩
+  let mut passed := 0
+  let mut failures : List String := []
+  let mut i := 0
+  for r in records do
+    i := i + 1
+    let num (j : Json) : Option Nat := (j.getStr?.toOption).bind String.toNat?
+    let (.ok init, .ok ins, .ok outs) := (r.getObjValAs? String "initState",
+        (r.getObjVal? "inputs").bind Json.getArr?, (r.getObjVal? "outputs").bind Json.getArr?)
+      | failures := s!"record {i}: bad fields" :: failures; continue
+    let inputs := ins.toList.filterMap num
+    let expected : List (Nat × Nat) := outs.toList.filterMap fun o =>
+      match (o.getArrVal? 0).toOption.bind (·.getNat?.toOption),
+          (o.getArrVal? 1).toOption.bind num with
+      | some idx, some v => some (idx, v)
+      | _, _ => none
+    match init.toNat? with
+    | some init =>
+      let nOut := expected.foldl (fun n e => max n (e.1 + 1)) 0
+      let got := hash init inputs nOut
+      if expected.all (fun e => got.getD e.1 0 == e.2) && inputs.length == ins.size then
+        passed := passed + 1
+      else failures := s!"record {i} ({inputs.length} inputs)" :: failures
+    | none => failures := s!"record {i}: bad initState" :: failures
+  return ⟨passed, failures.reverse⟩
+
 end HashKAT

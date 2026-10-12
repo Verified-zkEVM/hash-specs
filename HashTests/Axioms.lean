@@ -72,3 +72,8 @@ audit_axioms Hash.BLAKE3.Fast.State.finalize_updates Hash.blake3Init_eq Hash.bla
 
 -- Constructions.
 audit_axioms Hash.MerkleDamgard.iterate_append Hash.Sponge.sponge_prefix Hash.Tree.finish_pushAll
+
+-- ZK-friendly hashes: the S-box, and Poseidon (fast = reference, ring homomorphisms, circomlib).
+audit_axioms Hash.ZK.sbox_sbox_invExponent Hash.ZK.sbox_invExponent_sbox Hash.ZK.sbox_bijective
+  Hash.ZK.Poseidon.Reference.map_permutation Hash.ZK.Poseidon.Fast.permutation_eq
+  Hash.ZK.Poseidon.Circom.fastParams_toRef Hash.ZK.Poseidon.Circom.map_fastParams_toRef
