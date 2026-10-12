@@ -39,14 +39,29 @@ fn main() {
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let lean_libs = ["hash_x2dspecs_HashFFI", "hash_x2dspecs_Hash", "Init", "leanrt", "uv", "gmp"];
     if target_os == "linux" {
-        // The Lean archives refer to each other, so let the linker revisit them. The Lean
+        // The Lean archives refer to each other, and GNU ld scans each archive once, so merge
+        // them into a single archive, within which it resolves references in any order. The Lean
         // runtime is built against the static libc++ shipped in the toolchain's `lib`, not the
         // system's libstdc++.
-        println!("cargo:rustc-link-arg=-Wl,--start-group");
+        let dirs = [root.join(".lake/build/lib"), prefix.join("lib/lean"), prefix.join("lib")];
+        let out = PathBuf::from(env::var("OUT_DIR").unwrap());
+        let mut script = format!("CREATE {}\n", out.join("libhash_lean_all.a").display());
         for lib in lean_libs.iter().chain(&["c++", "c++abi"]) {
-            println!("cargo:rustc-link-arg=-l:lib{lib}.a");
+            let file = format!("lib{lib}.a");
+            let path = dirs.iter().map(|d| d.join(&file)).find(|p| p.exists());
+            let path = path.unwrap_or_else(|| panic!("{file} not found"));
+            script += &format!("ADDLIB {}\n", path.display());
         }
-        println!("cargo:rustc-link-arg=-Wl,--end-group");
+        script += "SAVE\nEND\n";
+        let mut ar = Command::new("ar")
+            .arg("-M")
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .expect("failed to run `ar`");
+        std::io::Write::write_all(ar.stdin.as_mut().unwrap(), script.as_bytes()).unwrap();
+        assert!(ar.wait().unwrap().success(), "`ar -M` failed");
+        println!("cargo:rustc-link-search=native={}", out.display());
+        println!("cargo:rustc-link-lib=static=hash_lean_all");
         for lib in ["m", "pthread", "dl"] {
             println!("cargo:rustc-link-lib=dylib={lib}");
         }

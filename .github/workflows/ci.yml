@@ -91,7 +91,8 @@ jobs:
           path: _site/html-multi
 
   deploy-docs:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # GitHub Pages sites are public, so publish the book only once the repository is.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && !github.event.repository.private
     needs: docs
     runs-on: ubuntu-latest
     permissions:
