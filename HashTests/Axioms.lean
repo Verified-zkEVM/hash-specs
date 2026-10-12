@@ -49,6 +49,9 @@ audit_axioms Hash.BLAKE2.blake2b_IV Hash.BLAKE2.blake2s_IV Hash.BLAKE2.SIGMA_per
 audit_axioms Hash.BLAKE2.Equiv.hashWith_eq Hash.BLAKE2.Equiv.F_eq Hash.BLAKE2.blake2bWith_eq
   Hash.BLAKE2.blake2sWith_eq Hash.BLAKE2.blake2b_eq Hash.BLAKE2.blake2s_eq Hash.BLAKE2.blake2bF_eq
 
+-- BLAKE2: streaming equals one-shot.
+audit_axioms Hash.BLAKE2.Fast.State.finalize_updates Hash.blake2bInit_eq Hash.blake2sInit_eq
+
 -- BLAKE3: the fast specification equals the reference [BLAKE3, §2].
 audit_axioms Hash.BLAKE3.Equiv.hashWith_eq Hash.BLAKE3.blake3Xof_eq Hash.BLAKE3.blake3_eq
   Hash.BLAKE3.blake3Keyed_eq Hash.BLAKE3.blake3DeriveKey_eq Hash.Tree.root_map

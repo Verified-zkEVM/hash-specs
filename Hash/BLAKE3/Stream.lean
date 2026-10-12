@@ -43,18 +43,18 @@ def init (key : Array UInt32) (flags : Nat) : State := ⟨key, flags, [], 0, Byt
 
 /-- The complete chunks of `p` that are followed by at least one more byte. -/
 def fullChunks (p : ByteArray) : List ByteArray :=
-  (List.range ((p.size - 1) / CHUNK_LEN)).map fun j =>
-    p.extract (j * CHUNK_LEN) ((j + 1) * CHUNK_LEN)
+  (List.range ((p.size - 1) / chunkLen)).map fun j =>
+    p.extract (j * chunkLen) ((j + 1) * chunkLen)
 
 /-- Add more input bytes. -/
 def update (s : State) (m : ByteArray) : State :=
   let p := s.buf ++ m
-  let n := (p.size - 1) / CHUNK_LEN
+  let n := (p.size - 1) / chunkLen
   { s with
     stack := Tree.pushAll (chunkOutput s.key s.flags) (parentOutput s.key s.flags)
       Output.chainingValue s.stack s.count (fullChunks p)
     count := s.count + n
-    buf := p.extract (n * CHUNK_LEN) p.size }
+    buf := p.extract (n * chunkLen) p.size }
 
 /-- The root node: the current chunk merged with every entry of the stack. -/
 def rootOutput (s : State) : Output :=

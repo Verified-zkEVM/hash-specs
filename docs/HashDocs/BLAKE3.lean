@@ -87,9 +87,9 @@ Every compression takes a set of *domain separation flags*, which record what th
 is for (§2.2, Table 3): the first and last block of a chunk, a parent node, the root, and the
 mode.
 
-{docstring Hash.BLAKE3.CHUNK_START}
+{docstring Hash.BLAKE3.Flag.chunkStart}
 
-{docstring Hash.BLAKE3.ROOT}
+{docstring Hash.BLAKE3.Flag.root}
 
 # State and primitives
 %%%
@@ -116,7 +116,7 @@ words in order and permutes them after each round, where BLAKE2 indexes them thr
 
 {docstring Hash.BLAKE3.Reference.round}
 
-{docstring Hash.BLAKE3.MSG_PERMUTATION}
+{docstring Hash.BLAKE3.msgPermutation}
 
 {docstring Hash.BLAKE3.Reference.permute}
 

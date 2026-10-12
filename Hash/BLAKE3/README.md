@@ -47,17 +47,18 @@ The message permutation $\pi$ [BLAKE3, §2.2, Table 2]:
 
 The domain-separation flags [BLAKE3, §2.2, Table 3]:
 
-| Flag                  | Value | Set on                                          |
-|-----------------------|------:|-------------------------------------------------|
-| `CHUNK_START`         | 1     | the first block of each chunk                   |
-| `CHUNK_END`           | 2     | the last block of each chunk                    |
-| `PARENT`              | 4     | parent nodes                                    |
-| `ROOT`                | 8     | the root compressions (output)                  |
-| `KEYED_HASH`          | 16    | every compression of `keyed_hash`               |
-| `DERIVE_KEY_CONTEXT`  | 32    | every compression of the first stage of `derive_key` |
-| `DERIVE_KEY_MATERIAL` | 64    | every compression of the second stage of `derive_key` |
+| Flag | In Lean | Value | Set on |
+|---|---|--:|---|
+| `CHUNK_START` | `Flag.chunkStart` | 1 | the first block of each chunk |
+| `CHUNK_END` | `Flag.chunkEnd` | 2 | the last block of each chunk |
+| `PARENT` | `Flag.parent` | 4 | parent nodes |
+| `ROOT` | `Flag.root` | 8 | the root compressions (output) |
+| `KEYED_HASH` | `Flag.keyedHash` | 16 | every compression of `keyed_hash` |
+| `DERIVE_KEY_CONTEXT` | `Flag.deriveKeyContext` | 32 | every compression of the first stage of `derive_key` |
+| `DERIVE_KEY_MATERIAL` | `Flag.deriveKeyMaterial` | 64 | every compression of the second stage of `derive_key` |
 
-Sizes: `CHUNK_LEN` $= 1024$ bytes [BLAKE3, §2.1], `BLOCK_LEN` $= 64$ bytes [BLAKE3, §2.4].
+Sizes: `CHUNK_LEN` $= 1024$ bytes [BLAKE3, §2.1], `BLOCK_LEN` $= 64$ bytes [BLAKE3, §2.4]
+(`chunkLen`, `blockLen` in Lean).
 The compression function has 7 rounds [BLAKE3, §2.2].
 
 ## The compression function
@@ -207,7 +208,7 @@ These notes summarise the specification; this directory proves no security prope
 
 | File | Contents |
 |------|----------|
-| `Reference.lean` | Constants (`IV`, `MSG_PERMUTATION`, the flags, `CHUNK_LEN`, `BLOCK_LEN`) and the reference specification on `BitVec 32` and `List UInt8`: `compress`, `Output` with `chainingValue` and `rootBytes`, `chunkOutput`, `parentOutput`, `inputChunks`, `hashWith`, and the modes `hash`, `keyedHash`, `deriveKey`. |
+| `Reference.lean` | Constants (`IV`, `msgPermutation`, the flags `Flag.*`, `chunkLen`, `blockLen`) and the reference specification on `BitVec 32` and `List UInt8`: `compress`, `Output` with `chainingValue` and `rootBytes`, `chunkOutput`, `parentOutput`, `inputChunks`, `hashWith`, and the modes `hash`, `keyedHash`, `deriveKey`. |
 | `Fast.lean` | The executable version on `ByteArray` and `Array UInt32`, step by step as the reference: `compress`, `chunkOutput` on one zero-padded copy of the chunk, `rootOutput`, `hashWith`, `ivWords`, `keyWords`. |
 | `Stream.lean` | Streaming state `State` (key, flags, CV stack, chunk count, buffered current chunk) with `init`, `update`, `rootOutput`, `finalize` [BLAKE3, §5.1]. |
 | `API.lean` | Byte-level API: `Hash.blake3Xof`, `Hash.blake3` (32 bytes), `Hash.blake3Keyed`, `Hash.blake3DeriveKey`, and the streaming initial states `blake3Init`, `blake3KeyedInit`, `blake3DeriveKeyInit`. |

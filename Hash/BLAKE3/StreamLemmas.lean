@@ -8,6 +8,7 @@ module
 public import Hash.Init
 public import Hash.BLAKE3.API
 public import Hash.Construction.TreeLemmas
+public import Hash.Prelude.BytesLemmas
 
 /-!
 # BLAKE3: streaming equals one-shot
@@ -28,18 +29,6 @@ public section
 namespace Hash.BLAKE3.Fast
 
 /-! ### Byte arrays and lists -/
-
-theorem _root_.ByteArray.ext_toList {a b : ByteArray} (h : a.data.toList = b.data.toList) :
-    a = b := by
-  cases a; cases b
-  simp only [ByteArray.mk.injEq]
-  exact Array.ext' h
-
-theorem data_extract (b : ByteArray) (i j : Nat) :
-    (b.extract i j).data.toList = (b.data.toList.drop i).take (j - i) := by
-  rw [ByteArray.data_extract, Array.toList_extract, List.extract]
-
-theorem size_eq_length (b : ByteArray) : b.size = b.data.toList.length := by simp
 
 /-- Consecutive pieces of `c` elements, then the rest, make up the whole list. -/
 theorem flatten_pieces {α : Type} (c n : Nat) (l : List α) :
@@ -83,33 +72,33 @@ theorem length_flatten_of_eq {α : Type} (c : Nat) (Q : List (List α))
 
 /-- The input is split into the full chunks `P` and the last chunk `b`. -/
 theorem inputChunks_eq (input : ByteArray) (P : List ByteArray) (b : ByteArray)
-    (hP : ∀ c ∈ P, c.size = CHUNK_LEN) (hb : b.size ≤ CHUNK_LEN) (hne : P ≠ [] → 0 < b.size)
+    (hP : ∀ c ∈ P, c.size = chunkLen) (hb : b.size ≤ chunkLen) (hne : P ≠ [] → 0 < b.size)
     (h : (P.map (·.data.toList)).flatten ++ b.data.toList = input.data.toList) :
     inputChunks input = P ++ [b] := by
-  have hQ : ∀ q ∈ P.map (·.data.toList), q.length = CHUNK_LEN := by
+  have hQ : ∀ q ∈ P.map (·.data.toList), q.length = chunkLen := by
     intro q hq
     obtain ⟨c, hc, rfl⟩ := List.mem_map.1 hq
     rw [← size_eq_length]; exact hP c hc
-  have hlen : input.size = P.length * CHUNK_LEN + b.size := by
+  have hlen : input.size = P.length * chunkLen + b.size := by
     rw [size_eq_length input, ← h, List.length_append, length_flatten_of_eq _ _ hQ,
       List.length_map, ← size_eq_length]
-  have hn : (if input.size = 0 then 1 else (input.size + CHUNK_LEN - 1) / CHUNK_LEN) =
+  have hn : (if input.size = 0 then 1 else (input.size + chunkLen - 1) / chunkLen) =
       P.length + 1 := by
     split
     · rename_i h0
       have : P = [] := by
         by_contra hP'
         have := hne hP'
-        simp only [CHUNK_LEN] at hlen
+        simp only [chunkLen] at hlen
         omega
       simp [this]
-    · simp only [CHUNK_LEN] at hlen ⊢
+    · simp only [chunkLen] at hlen ⊢
       rcases Nat.eq_zero_or_pos b.size with hb0 | hb0
       · have := hne
         by_cases hP0 : P = []
         · simp [hP0] at hlen; omega
         · have := hne hP0; omega
-      · simp only [CHUNK_LEN] at hb
+      · simp only [chunkLen] at hb
         omega
   unfold inputChunks
   simp only []
@@ -120,15 +109,15 @@ theorem inputChunks_eq (input : ByteArray) (P : List ByteArray) (b : ByteArray)
     simp only [List.length_map, List.length_range] at h1
     rw [List.getElem_map, List.getElem_range]
     apply ByteArray.ext_toList
-    rw [data_extract, show (j + 1) * CHUNK_LEN - j * CHUNK_LEN = CHUNK_LEN by
+    rw [data_extract, show (j + 1) * chunkLen - j * chunkLen = chunkLen by
       rw [Nat.succ_mul]; omega, ← h]
     by_cases hj : j < P.length
     · rw [List.getElem_append_left (by simpa using hj),
-        piece_flatten CHUNK_LEN _ _ hQ j (by simpa using hj), List.getElem_map]
+        piece_flatten chunkLen _ _ hQ j (by simpa using hj), List.getElem_map]
     · have hj' : j = P.length := by omega
       subst hj'
       rw [List.getElem_append_right (by simp), List.getElem_singleton]
-      · rw [show P.length * CHUNK_LEN = ((P.map (·.data.toList)).flatten).length by
+      · rw [show P.length * chunkLen = ((P.map (·.data.toList)).flatten).length by
           rw [length_flatten_of_eq _ _ hQ, List.length_map], List.drop_left,
           List.take_of_length_le (by rw [← size_eq_length]; exact hb)]
 
@@ -144,14 +133,14 @@ def Inv (s : State) (input : ByteArray) : Prop :=
   ∃ P : List ByteArray,
     s.stack = Tree.pushAll (chunkOutput key flags) (parentOutput key flags)
       Output.chainingValue [] 0 P ∧
-    s.count = P.length ∧ (∀ c ∈ P, c.size = CHUNK_LEN) ∧ s.buf.size ≤ CHUNK_LEN ∧
+    s.count = P.length ∧ (∀ c ∈ P, c.size = chunkLen) ∧ s.buf.size ≤ chunkLen ∧
     (P ≠ [] → 0 < s.buf.size) ∧
     (P.map (·.data.toList)).flatten ++ s.buf.data.toList = input.data.toList
 
 theorem inv_init : Inv key flags (State.init key flags) ByteArray.empty :=
   ⟨rfl, rfl, [], rfl, rfl, by simp, by simp [State.init], by simp, by simp [State.init]⟩
 
-theorem pushAll_append {α β γ : Type} [Inhabited α] (leaf : Nat → α → γ)
+theorem pushAll_append {α β γ : Type} (leaf : Nat → α → γ)
     (parent : β → β → γ) (cv : γ → β) (st : List β) (i : Nat) (P Q : List α) :
     Tree.pushAll leaf parent cv st i (P ++ Q) =
       Tree.pushAll leaf parent cv (Tree.pushAll leaf parent cv st i P) (i + P.length) Q := by
@@ -166,15 +155,15 @@ theorem inv_update (s : State) (input m : ByteArray) (h : Inv key flags s input)
   obtain ⟨hkey, hflags, P, hst, hcount, hP, hbuf, hne, hdata⟩ := h
   have hpl : (s.buf ++ m).data.toList = s.buf.data.toList ++ m.data.toList := by simp
   have hps : (s.buf ++ m).size = s.buf.size + m.size := by simp
-  have hfull : ∀ c ∈ State.fullChunks (s.buf ++ m), c.size = CHUNK_LEN := by
+  have hfull : ∀ c ∈ State.fullChunks (s.buf ++ m), c.size = chunkLen := by
     intro c hc
     simp only [State.fullChunks, List.mem_map, List.mem_range] at hc
     obtain ⟨j, hj, rfl⟩ := hc
     rw [ByteArray.size_extract]
-    simp only [CHUNK_LEN] at hj ⊢
+    simp only [chunkLen] at hj ⊢
     omega
   have hlenfull : (State.fullChunks (s.buf ++ m)).length =
-      ((s.buf ++ m).size - 1) / CHUNK_LEN := by
+      ((s.buf ++ m).size - 1) / chunkLen := by
     simp [State.fullChunks]
   refine ⟨hkey, hflags, P ++ State.fullChunks (s.buf ++ m), ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [State.update]
@@ -184,10 +173,10 @@ theorem inv_update (s : State) (input m : ByteArray) (h : Inv key flags s input)
     rcases List.mem_append.1 hc with hc | hc
     · exact hP c hc
     · exact hfull c hc
-  · simp only [State.update, ByteArray.size_extract, Nat.min_self, CHUNK_LEN]
+  · simp only [State.update, ByteArray.size_extract, Nat.min_self, chunkLen]
     omega
   · intro hne'
-    simp only [State.update, ByteArray.size_extract, Nat.min_self, CHUNK_LEN]
+    simp only [State.update, ByteArray.size_extract, Nat.min_self, chunkLen]
     by_cases hp0 : (s.buf ++ m).size = 0
     · exfalso
       have hPn : P = [] := by
@@ -202,13 +191,13 @@ theorem inv_update (s : State) (input m : ByteArray) (h : Inv key flags s input)
       ByteArray.data_append, Array.toList_append, ← hdata]
     congr 1
     have hfc : ((State.fullChunks (s.buf ++ m)).map (·.data.toList)) =
-        (List.range (((s.buf ++ m).size - 1) / CHUNK_LEN)).map fun j =>
-          ((s.buf ++ m).data.toList.drop (j * CHUNK_LEN)).take CHUNK_LEN := by
+        (List.range (((s.buf ++ m).size - 1) / chunkLen)).map fun j =>
+          ((s.buf ++ m).data.toList.drop (j * chunkLen)).take chunkLen := by
       simp only [State.fullChunks, List.map_map]
       apply List.map_congr_left
       intro j _
       simp only [Function.comp, data_extract]
-      rw [show (j + 1) * CHUNK_LEN - j * CHUNK_LEN = CHUNK_LEN by rw [Nat.succ_mul]; omega]
+      rw [show (j + 1) * chunkLen - j * chunkLen = chunkLen by rw [Nat.succ_mul]; omega]
     rw [hfc, data_extract, List.take_of_length_le (by simp), flatten_pieces, hpl]
 
 theorem inv_updates (ms : List ByteArray) (s : State) (input : ByteArray)

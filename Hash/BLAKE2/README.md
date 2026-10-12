@@ -207,6 +207,7 @@ rounds continue the schedule $`\sigma_{i \bmod 10}`$.
 | `Stream.lean` | incremental interface `Fast.State` with `init`, `update`, `finalize` |
 | `API.lean` | `Hash.blake2bWith`, `blake2sWith`, `blake2b` (512-bit, unkeyed), `blake2s` (256-bit, unkeyed), `blake2bInit`, `blake2sInit`, `blake2bF`, `blake2bPrecompile` |
 | `Equiv.lean` | `LawfulWord`, `Params.Valid`, and the proofs that the fast specification equals the reference |
+| `StreamLemmas.lean` | the proof that the streaming interface equals the one-shot functions |
 
 Main theorems (namespace `Hash.BLAKE2`):
 
@@ -224,9 +225,16 @@ Main theorems (namespace `Hash.BLAKE2`):
   parameter-block layout) and any `LawfulWord` instance; `blake2bParams_valid` and
   `blake2sParams_valid` discharge the first hypothesis.
 
-That the streaming interface (`Stream.lean`) agrees with the one-shot functions is **tested,
-not proved**: by `blake2-kat.json` records split at several points (`HashKAT`) and by fuzzing with
-random splits (`harness/`). Kernel-checked examples in `HashTests/BLAKE2.lean` cover RFC 7693
+- `blake2bInit_eq`, `blake2sInit_eq` (namespace `Hash`): feeding any list of pieces `ms` to the
+  streaming interface from `blake2bInit key salt personal nn` (resp. `blake2sInit`), then
+  `finalize`, gives `blake2bWith` (resp. `blake2sWith`) of their concatenation, for every key of
+  at most one block. The generic version is `Fast.State.finalize_updates`. The proof's invariant:
+  the state has compressed the first $`c`$ whole blocks of the data (key block, then message)
+  with the one-shot counters, and buffers the remaining 1 to $`bb`$ bytes, or none before any
+  data.
+
+The streaming interface is also tested: by `blake2-kat.json` records split at several points
+(`HashKAT`) and by fuzzing with random splits (`harness/`). Kernel-checked examples in `HashTests/BLAKE2.lean` cover RFC 7693
 Appendices A and B, the first keyed `blake2-kat.json` vector and EIP-152 test vector 5.
 
 The reference is total: it does not reject out-of-range inputs. Digest and key lengths enter the

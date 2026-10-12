@@ -320,7 +320,9 @@ The evidence that the Lean specification is the BLAKE2 of RFC 7693, as of 2026-1
   * Proved for BLAKE2b and BLAKE2s with every key of at most one block, salt,
     personalisation and output length (`Hash.BLAKE2.blake2bWith_eq`,
     `Hash.BLAKE2.blake2sWith_eq`), and for the EIP-152 compression function with any number of
-    rounds (`Hash.BLAKE2.blake2bF_eq`). The axiom audit shows only `propext`,
+    rounds (`Hash.BLAKE2.blake2bF_eq`). Streaming equals one-shot, for every way of splitting
+    the message and every key of at most one block (`Hash.blake2bInit_eq`,
+    `Hash.blake2sInit_eq`). The axiom audit shows only `propext`,
     `Classical.choice` and `Quot.sound`.
 *
   * Known-answer tests
@@ -346,8 +348,7 @@ The evidence that the Lean specification is the BLAKE2 of RFC 7693, as of 2026-1
     EIP-152 $`F` (informational; see `LIT-REVIEW.md`).
 *
   * Known deviations
-  * Streaming equals one-shot is tested, not proved. Keys longer than one block are outside
-    RFC 7693 and outside the equivalence theorems. The tree-hashing parameters of the BLAKE2
+  * Keys longer than one block are outside RFC 7693 and outside the equivalence theorems. The tree-hashing parameters of the BLAKE2
     specification are fixed to sequential mode.
 :::
 

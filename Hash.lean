@@ -11,6 +11,8 @@ public import Hash.BLAKE2.Constants
 public import Hash.BLAKE2.Equiv
 public import Hash.BLAKE2.Fast
 public import Hash.BLAKE2.Reference
+public import Hash.BLAKE2.Stream
+public import Hash.BLAKE2.StreamLemmas
 public import Hash.BLAKE3.API
 public import Hash.BLAKE3.Equiv
 public import Hash.BLAKE3.Fast

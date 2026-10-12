@@ -138,8 +138,8 @@ theorem take_drop_append_zeros (l : List UInt8) (z k c : Nat) (h : k + c ≤ l.l
 /-- The blocks of a chunk, as slices. -/
 theorem chunkBlocks_eq (l : List UInt8) :
     Reference.chunkBlocks l =
-      (List.range (if l.length = 0 then 1 else (l.length + BLOCK_LEN - 1) / BLOCK_LEN)).map
-        fun j => (l.drop (j * BLOCK_LEN)).take BLOCK_LEN := by
+      (List.range (if l.length = 0 then 1 else (l.length + blockLen - 1) / blockLen)).map
+        fun j => (l.drop (j * blockLen)).take blockLen := by
   unfold Reference.chunkBlocks
   by_cases h : l = []
   · subst h; rfl
@@ -161,8 +161,8 @@ theorem inputChunks_eq (input : ByteArray) :
     rw [chunks_eq_map_range _ (by decide), hs, List.map_map]
     apply List.map_congr_left
     intro j _
-    simp only [Function.comp, BLAKE3.Fast.data_extract]
-    rw [show (j + 1) * CHUNK_LEN - j * CHUNK_LEN = CHUNK_LEN by rw [Nat.succ_mul]; omega]
+    simp only [Function.comp, data_extract]
+    rw [show (j + 1) * chunkLen - j * chunkLen = chunkLen by rw [Nat.succ_mul]; omega]
 
 theorem chunkOutput_eq (key : Array UInt32) (flags i : Nat) (chunk : ByteArray) :
     toRef (Fast.chunkOutput key flags i chunk) =
@@ -170,48 +170,48 @@ theorem chunkOutput_eq (key : Array UInt32) (flags i : Nat) (chunk : ByteArray) 
   have hs : chunk.size = chunk.data.toList.length := by simp
   simp only [Fast.chunkOutput, Reference.chunkOutput, chunkBlocks_eq, ← hs, List.length_map,
     List.length_range]
-  generalize hnb : (if chunk.size = 0 then 1 else (chunk.size + BLOCK_LEN - 1) / BLOCK_LEN) = nb
+  generalize hnb : (if chunk.size = 0 then 1 else (chunk.size + blockLen - 1) / blockLen) = nb
   have hnb1 : 1 ≤ nb := by
     rw [← hnb]; split
     · exact Nat.le_refl _
-    · simp only [BLOCK_LEN]; omega
-  have hL : chunk.size ≤ nb * BLOCK_LEN := by
+    · simp only [blockLen]; omega
+  have hL : chunk.size ≤ nb * blockLen := by
     rw [← hnb]; split
-    · simp only [BLOCK_LEN]; omega
-    · simp only [BLOCK_LEN]; omega
-  have hlast : (nb - 1) * BLOCK_LEN ≤ chunk.size := by
+    · simp only [blockLen]; omega
+    · simp only [blockLen]; omega
+  have hlast : (nb - 1) * blockLen ≤ chunk.size := by
     rw [← hnb]; split
     · simp
-    · simp only [BLOCK_LEN]; omega
-  set p := chunk ++ ByteArray.zeros (nb * BLOCK_LEN - chunk.size) with hp
-  have hz : (ByteArray.zeros (nb * BLOCK_LEN - chunk.size)).size =
-      nb * BLOCK_LEN - chunk.size := by
+    · simp only [blockLen]; omega
+  set p := chunk ++ ByteArray.zeros (nb * blockLen - chunk.size) with hp
+  have hz : (ByteArray.zeros (nb * blockLen - chunk.size)).size =
+      nb * blockLen - chunk.size := by
     simp only [ByteArray.zeros, ByteArray.size, Array.size_replicate]
-  have hps : p.size = nb * BLOCK_LEN := by
+  have hps : p.size = nb * blockLen := by
     rw [hp, ByteArray.size_append, hz]; omega
   have hpl : p.data.toList =
-      chunk.data.toList ++ List.replicate (nb * BLOCK_LEN - chunk.size) 0 := by
+      chunk.data.toList ++ List.replicate (nb * blockLen - chunk.size) 0 := by
     simp [p, ByteArray.zeros]
   have hgetD : ∀ j, j < nb → ((List.range nb).map fun j =>
-      (chunk.data.toList.drop (j * BLOCK_LEN)).take BLOCK_LEN).getD j [] =
-      (chunk.data.toList.drop (j * BLOCK_LEN)).take BLOCK_LEN := by
+      (chunk.data.toList.drop (j * blockLen)).take blockLen).getD j [] =
+      (chunk.data.toList.drop (j * blockLen)).take blockLen := by
     intro j hj
     rw [List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj]
     rfl
-  have hblk : ∀ j, j < nb → bv (BLAKE2.Fast.block BLAKE2.blake2sParams p (j * BLOCK_LEN)) =
-      Reference.wordsLE ((chunk.data.toList.drop (j * BLOCK_LEN)).take BLOCK_LEN ++
-        List.replicate (BLOCK_LEN -
-          ((chunk.data.toList.drop (j * BLOCK_LEN)).take BLOCK_LEN).length) 0) := by
+  have hblk : ∀ j, j < nb → bv (BLAKE2.Fast.block BLAKE2.blake2sParams p (j * blockLen)) =
+      Reference.wordsLE ((chunk.data.toList.drop (j * blockLen)).take blockLen ++
+        List.replicate (blockLen -
+          ((chunk.data.toList.drop (j * blockLen)).take blockLen).length) 0) := by
     intro j hj
-    have hj' : (j + 1) * BLOCK_LEN ≤ nb * BLOCK_LEN := Nat.mul_le_mul_right _ hj
+    have hj' : (j + 1) * blockLen ≤ nb * blockLen := Nat.mul_le_mul_right _ hj
     rw [Nat.succ_mul] at hj'
     have := BLAKE2.Equiv.block_eq (α := UInt32) BLAKE2.blake2sParams
-      BLAKE2.blake2sParams_valid p (j * BLOCK_LEN)
+      BLAKE2.blake2sParams_valid p (j * blockLen)
       (by rw [hps]; exact hj')
     refine this.trans ?_
     rw [Reference.wordsLE, hpl]
     congr 1
-    exact take_drop_append_zeros _ _ _ BLOCK_LEN (by rw [← hs]; omega)
+    exact take_drop_append_zeros _ _ _ blockLen (by rw [← hs]; omega)
   simp only [toRef, Reference.Output.mk.injEq]
   refine ⟨?_, ?_, trivial, ?_, trivial⟩
   · refine (foldl_hom_of_mem bv _ _ _ _ ?_).symm
@@ -220,7 +220,7 @@ theorem chunkOutput_eq (key : Array UInt32) (flags i : Nat) (chunk : ByteArray) 
     rw [bv_extract_zero, compress_eq, hblk j (by omega), hgetD j (by omega)]
   · rw [hblk (nb - 1) (by omega), hgetD (nb - 1) (by omega)]
   · rw [hgetD (nb - 1) (by omega), List.length_take, List.length_drop, ← hs]
-    simp only [BLOCK_LEN] at hL hlast ⊢
+    simp only [blockLen] at hL hlast ⊢
     omega
 
 /-! ### BLAKE3 -/
@@ -278,7 +278,7 @@ theorem rootBytes_prefix (o : Reference.Output) {d₁ d₂ : Nat} (h : d₁ ≤ 
     o.rootBytes d₁ = (o.rootBytes d₂).take d₁ := by
   simp only [Reference.Output.rootBytes, List.take_take, Nat.min_eq_left h]
   set F := fun i => Reference.wordsToBytes (Reference.compress o.cv o.block i o.blockLen
-    (o.flags ||| ROOT))
+    (o.flags ||| Flag.root))
   obtain ⟨k, hk⟩ : ∃ k, (d₂ + 63) / 64 = (d₁ + 63) / 64 + k :=
     ⟨(d₂ + 63) / 64 - (d₁ + 63) / 64, by omega⟩
   have hlen : ((List.range ((d₁ + 63) / 64)).flatMap F).length = (d₁ + 63) / 64 * 64 :=
@@ -314,8 +314,8 @@ theorem blake3Keyed_eq (key m : ByteArray) (d : Nat) (h : key.size = 32) :
 theorem blake3DeriveKey_eq (context material : ByteArray) (d : Nat) :
     (blake3DeriveKey context material d).data.toList =
       Reference.deriveKey context.data.toList material.data.toList d := by
-  have hc := Equiv.hashWith_eq Fast.ivWords DERIVE_KEY_CONTEXT context 32
-  have hsize : (Fast.hashWith Fast.ivWords DERIVE_KEY_CONTEXT context 32).size = 32 := by
+  have hc := Equiv.hashWith_eq Fast.ivWords Flag.deriveKeyContext context 32
+  have hsize : (Fast.hashWith Fast.ivWords Flag.deriveKeyContext context 32).size = 32 := by
     rw [show ∀ b : ByteArray, b.size = b.data.toList.length by simp, hc, Reference.hashWith,
       Equiv.length_rootBytes]
   rw [blake3DeriveKey, Equiv.hashWith_eq, blake3ContextKey, Equiv.bv_keyWords _ hsize, hc,

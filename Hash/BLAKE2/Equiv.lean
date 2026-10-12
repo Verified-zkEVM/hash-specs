@@ -45,6 +45,7 @@ class LawfulWord (α : Type) [Fast.Word α] (w : Nat) where
   data_pushLE (a : ByteArray) (x : α) :
     (pushLE a x).data.toList =
       a.data.toList ++ (List.range (w / 8)).map fun i => ((toBV x).toNat / 2 ^ (8 * i)).toUInt8
+  toBV_injective : Function.Injective toBV
 
 instance : LawfulWord UInt32 32 where
   toBV := UInt32.toBitVec
@@ -56,6 +57,7 @@ instance : LawfulWord UInt32 32 where
   toBV_rotr := UInt32.toBitVec_rotr
   toBV_loadLE := ByteArray.toBitVec_getUInt32LE
   data_pushLE := ByteArray.data_pushUInt32LE
+  toBV_injective _ _ h := UInt32.toBitVec_inj.mp h
 
 instance : LawfulWord UInt64 64 where
   toBV := UInt64.toBitVec
@@ -67,6 +69,7 @@ instance : LawfulWord UInt64 64 where
   toBV_rotr := UInt64.toBitVec_rotr
   toBV_loadLE := ByteArray.toBitVec_getUInt64LE
   data_pushLE := ByteArray.data_pushUInt64LE
+  toBV_injective _ _ h := UInt64.toBitVec_inj.mp h
 
 /-- The shape facts about `P` that the proof uses: whole-byte words, rotations shorter than a
 word, sixteen-word blocks, an eight-word IV and parameter block. -/
@@ -81,6 +84,10 @@ instance (P : Params) : Decidable P.Valid :=
     P.R.1 < P.w ∧ P.R.2.1 < P.w ∧ P.R.2.2.1 < P.w ∧ P.R.2.2.2 < P.w ∧
     P.blockBytes = 16 * (P.w / 8) ∧ P.IV.length = 8 ∧
     4 ≤ P.saltOffset ∧ P.saltOffset + 2 * P.saltBytes = 8 * (P.w / 8)))
+
+theorem Params.Valid.blockBytes_pos {P : Params} (hP : P.Valid) : 0 < P.blockBytes := by
+  obtain ⟨_, hk, _, _, _, _, hbb, _⟩ := hP
+  omega
 
 theorem blake2bParams_valid : blake2bParams.Valid := by decide
 

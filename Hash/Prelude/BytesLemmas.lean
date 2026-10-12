@@ -20,6 +20,20 @@ public section
 
 namespace Hash
 
+/-! ### Byte arrays as lists -/
+
+theorem _root_.ByteArray.ext_toList {a b : ByteArray} (h : a.data.toList = b.data.toList) :
+    a = b := by
+  cases a; cases b
+  simp only [ByteArray.mk.injEq]
+  exact Array.ext' h
+
+theorem data_extract (b : ByteArray) (i j : Nat) :
+    (b.extract i j).data.toList = (b.data.toList.drop i).take (j - i) := by
+  rw [ByteArray.data_extract, Array.toList_extract, List.extract]
+
+theorem size_eq_length (b : ByteArray) : b.size = b.data.toList.length := by simp
+
 /-! ### Byte lists as bit strings -/
 
 theorem bytesToBitsMSB_take (k : Nat) (l : List UInt8) :

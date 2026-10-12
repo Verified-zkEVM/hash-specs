@@ -15,9 +15,10 @@ then `State.finalize`. BLAKE2 compresses the last block with the final flag set,
 only be compressed once more input is known to follow it: the state buffers between one and
 `bb` pending bytes once any input has arrived. The key block, if any, is the first pending block.
 
-Hashing a message in pieces gives the same output as hashing it at once. This is tested against
-the one-shot functions on every `blake2-kat.json` record split at several points (`HashKAT`), and
-by fuzzing with random splits (`harness/`).
+Hashing a message in pieces gives the same output as hashing it at once, for every key of at
+most one block: `Hash.BLAKE2.Fast.State.finalize_updates` in `Hash.BLAKE2.StreamLemmas`. It is
+also tested against the one-shot functions on every `blake2-kat.json` record split at several
+points (`HashKAT`), and by fuzzing with random splits (`harness/`).
 -/
 
 @[expose] public section
