@@ -2,7 +2,7 @@
 
 *A canonical library of formal, executable hash-function specifications in Lean 4. Each spec is documented to paper quality and checked by differential testing against real-world implementations. It is built to be compatible with the [Verified-zkEVM](https://github.com/Verified-zkEVM) ecosystem (CompPoly, ArkLib, …), so that projects there can adopt it when the time is right. The first priority is for these to become the canonical hash specs across Verified-zkEVM. A secondary aim is that the core could, in principle, be upstreamed to [CSLib](https://github.com/leanprover/cslib).*
 
-Status: drafted 2026-10-11 as a plan; implementation of Phases 0–3 started the same day. Toolchain `v4.34.0`, matching CompPoly (§2.1). See [`LIT-REVIEW.md`](LIT-REVIEW.md) for prior work.
+Status: drafted 2026-10-11 as a plan; Phases 0–4 implemented by 2026-10-12. Phase 5 is optional, deferred work. Toolchain `v4.34.0`, matching CompPoly (§2.1). See [`LIT-REVIEW.md`](LIT-REVIEW.md) for prior work.
 
 ---
 
@@ -327,6 +327,17 @@ Sizes are relative (S/M/L/XL), not calendar estimates. Each phase ends with expl
 - `Construction/FieldSponge`, including the domain separation conventions each ecosystem uses (circomlib's capacity initialisation versus Plonky3's padding-free sponge). Each convention is documented as its own instance.
 - Use the circomlib and leanSpec instances already used by `clean` and `ArkLib` as test instances, so later adoption is easy.
 - **Exit:** every listed instance passes its authors' vectors, is fuzzed against two oracles, and has axiom-clean `Equiv` theorems.
+- *As implemented (closed 2026-10-12):*
+  - **Instances.** Poseidon: circomlib BN254, widths 2–17. Poseidon2: HorizenLabs BN254 t = 3, and Plonky3 0.8.0 BabyBear and KoalaBear at widths 16 and 24.
+  - **Field representations.** The executable code runs over a small class of field operations, `Hash.ZK.FieldOps`, rather than a generic SPN over `[Field F]`. It runs on three representations: `ZMod p` (Layer 1), CompPoly's Montgomery fields (`HashZK`), and raw limbs or natural numbers for the C exports (`HashZK.Raw`, Mathlib-free). Maps that preserve the operations carry the proofs between them.
+  - **Constants.** Round constants and Cauchy matrices are defined as Grain output. The kernel cannot evaluate Grain at these sizes, so they are checked against the authors' vectors by computation, not proved equal to published tables.
+  - **Field sponges.** `Construction/FieldSponge` covers Plonky3's padding-free sponge and truncated-permutation compression. circomlib's convention is its one-shot hash with a caller-set capacity element.
+  - **Oracles.** Plonky3 is the only implementation of its 31-bit Poseidon2 instances (SP1's is a fork). Those instances are therefore checked against Plonky3's scalar and SIMD code paths rather than against two independent implementations.
+  - **Not done.** leanSpec has dropped Poseidon2 (it now uses Poseidon1 over KoalaBear), and its last Poseidon2 used Plonky3's superseded KoalaBear constant order. Its instance is therefore not included; the current Plonky3 KoalaBear instance is the one ArkLib transcribes. ArkLib's transcription indexes the external round constants incorrectly, which is worth reporting upstream.
+  - **Deferred (decided 2026-10-12).**
+    - Poseidon's optimized form, as circomlib computes it, with its `Equiv` to the reference. circomlib computes it with constants moved back through `M⁻¹`, sparse partial-round matrices and the `P` matrix.
+    - Round-number formulas as functions; the chosen numbers are a table.
+    - An MDS check for small `t`.
 
 ### Phase 5: ZK-friendly hashes II (optional, deferred future work; not in v1)
 *Decided 2026-10-12:* the v1 scope ends with Phase 4. This phase is optional and deferred: none of it is on the v1 critical path, and Phase 6 does not wait for it. It is kept here as the plan for whoever picks it up. The README, previously the last step of this phase, moves to Phase 6.
