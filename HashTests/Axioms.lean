@@ -27,5 +27,10 @@ audit_axioms Hash.SHA2.Equiv.hashWith_eq Hash.SHA2.sha224_eq Hash.SHA2.sha256_eq
 -- Keccak constants [FIPS 202, §3.2.2, §3.2.5].
 audit_axioms Hash.Keccak.rhoOffsets_eq Hash.Keccak.roundConstants_eq
 
+-- Keccak: strings and states, Algorithm 7, and prefix consistency [FIPS 202, §3, §6.2].
+audit_axioms Hash.Keccak.State.ofString_toString Hash.Keccak.State.toString_ofString
+  Hash.Keccak.keccakP_eq_algorithm7 Hash.Keccak.Reference.shake128_prefix
+  Hash.Keccak.Reference.shake256_prefix
+
 -- Constructions.
-audit_axioms Hash.MerkleDamgard.iterate_append
+audit_axioms Hash.MerkleDamgard.iterate_append Hash.Sponge.sponge_prefix
