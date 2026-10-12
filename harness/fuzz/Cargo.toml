@@ -13,6 +13,8 @@ aws-lc-rs = "1"
 hash-lean = { path = "../hash-lean" }
 libfuzzer-sys = "0.4"
 sha2 = "0.10"
+sha3 = "0.10"
+tiny-keccak = { version = "2", features = ["sha3", "keccak", "shake"] }
 
 [[bin]]
 name = "sha2"
@@ -24,6 +26,13 @@ bench = false
 [[bin]]
 name = "sha2_stream"
 path = "fuzz_targets/sha2_stream.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "keccak"
+path = "fuzz_targets/keccak.rs"
 test = false
 doc = false
 bench = false

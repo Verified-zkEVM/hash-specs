@@ -7,6 +7,12 @@ module
 
 public import Hash.Init
 public import Hash.Construction.MerkleDamgard
+public import Hash.Construction.Sponge
+public import Hash.Keccak.API
+public import Hash.Keccak.Constants
+public import Hash.Keccak.Fast
+public import Hash.Keccak.KeccakP
+public import Hash.Keccak.SHA3
 public import Hash.Prelude.Arith
 public import Hash.Prelude.Bits
 public import Hash.Prelude.BitsLemmas

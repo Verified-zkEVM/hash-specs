@@ -20,6 +20,13 @@ with independent implementations (ROADMAP.md §4).
 | Hash | Lean | Oracles |
 |---|---|---|
 | SHA-224/256/384/512, SHA-512/224, SHA-512/256 | `Hash.sha*`, `Hash.sha*Init` (streaming) | RustCrypto `sha2`, AWS-LC (`aws-lc-rs`) |
+| SHA3-224/256/384/512 | `Hash.sha3x*` | RustCrypto `sha3`, `tiny-keccak`, AWS-LC (256/384/512) |
+| SHAKE128, SHAKE256 | `Hash.shake128`, `Hash.shake256` | RustCrypto `sha3`, `tiny-keccak` |
+| Keccak-256 (Ethereum) | `Hash.keccak256` | RustCrypto `sha3`, `tiny-keccak`, `alloy-primitives` |
+
+Lineage: RustCrypto `sha3` and `tiny-keccak` are independent Rust implementations; AWS-LC's SHA-3
+descends from BoringSSL/OpenSSL. `alloy-primitives::keccak256` uses `tiny-keccak` by default, so
+it is not independent of it; it is included because it is the function Ethereum tooling calls.
 
 ```sh
 cd hash-lean && cargo test --release          # differential tests

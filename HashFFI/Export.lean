@@ -6,6 +6,7 @@ Authors: Derek Sorensen
 module
 
 public import Hash.SHA2.API
+public import Hash.Keccak.API
 
 /-!
 # C entry points for the differential-testing harness
@@ -38,6 +39,32 @@ namespace HashFFI
 @[export hs_sha512t224] def sha512t224 (m : ByteArray) : ByteArray := Hash.sha512t224 m
 /-- SHA-512/256. -/
 @[export hs_sha512t256] def sha512t256 (m : ByteArray) : ByteArray := Hash.sha512t256 m
+/-- SHA3-224. -/
+@[export hs_sha3x224] def sha3x224 (m : ByteArray) : ByteArray := Hash.sha3x224 m
+/-- SHA3-256. -/
+@[export hs_sha3x256] def sha3x256 (m : ByteArray) : ByteArray := Hash.sha3x256 m
+/-- SHA3-384. -/
+@[export hs_sha3x384] def sha3x384 (m : ByteArray) : ByteArray := Hash.sha3x384 m
+/-- SHA3-512. -/
+@[export hs_sha3x512] def sha3x512 (m : ByteArray) : ByteArray := Hash.sha3x512 m
+/-- Keccak-256. -/
+@[export hs_keccak256] def keccak256 (m : ByteArray) : ByteArray := Hash.keccak256 m
+
+/-- Split an XOF input into the output length (the first four bytes, big-endian) and the
+message (the rest). -/
+def xofInput (input : ByteArray) : Nat × ByteArray :=
+  let d := (List.range 4).foldl (fun d i => 256 * d + (input.get! i).toNat) 0
+  (d, input.extract 4 input.size)
+
+/-- SHAKE128. The input is the output length in bytes (four bytes, big-endian), then the
+message. -/
+@[export hs_shake128] def shake128 (input : ByteArray) : ByteArray :=
+  let (d, m) := xofInput input
+  Hash.shake128 m d
+/-- SHAKE256, with input as for `shake128`. -/
+@[export hs_shake256] def shake256 (input : ByteArray) : ByteArray :=
+  let (d, m) := xofInput input
+  Hash.shake256 m d
 
 /-- Absorb `m` into `s` in pieces whose sizes cycle through `sizes` (a size of 0 is an empty
 update), then finalize. -/

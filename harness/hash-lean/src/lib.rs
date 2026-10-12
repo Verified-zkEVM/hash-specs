@@ -24,6 +24,13 @@ extern "C" {
     fn hs_sha512t224(m: *mut lean_object) -> *mut lean_object;
     fn hs_sha512t256(m: *mut lean_object) -> *mut lean_object;
     fn hs_sha2_stream(input: *mut lean_object) -> *mut lean_object;
+    fn hs_sha3x224(m: *mut lean_object) -> *mut lean_object;
+    fn hs_sha3x256(m: *mut lean_object) -> *mut lean_object;
+    fn hs_sha3x384(m: *mut lean_object) -> *mut lean_object;
+    fn hs_sha3x512(m: *mut lean_object) -> *mut lean_object;
+    fn hs_keccak256(m: *mut lean_object) -> *mut lean_object;
+    fn hs_shake128(input: *mut lean_object) -> *mut lean_object;
+    fn hs_shake256(input: *mut lean_object) -> *mut lean_object;
 }
 
 static INIT: Once = Once::new();
@@ -142,4 +149,47 @@ pub fn sha2_stream(variant: Sha2Variant, pieces: &[u16], m: &[u8]) -> Vec<u8> {
     }
     input.extend_from_slice(m);
     call(hs_sha2_stream, &input, variant.digest_len())
+}
+
+/// SHA3-224, computed by the Lean fast specification.
+pub fn sha3_224(m: &[u8]) -> Vec<u8> {
+    call(hs_sha3x224, m, 28)
+}
+
+/// SHA3-256, computed by the Lean fast specification.
+pub fn sha3_256(m: &[u8]) -> Vec<u8> {
+    call(hs_sha3x256, m, 32)
+}
+
+/// SHA3-384, computed by the Lean fast specification.
+pub fn sha3_384(m: &[u8]) -> Vec<u8> {
+    call(hs_sha3x384, m, 48)
+}
+
+/// SHA3-512, computed by the Lean fast specification.
+pub fn sha3_512(m: &[u8]) -> Vec<u8> {
+    call(hs_sha3x512, m, 64)
+}
+
+/// Ethereum's Keccak-256, computed by the Lean fast specification.
+pub fn keccak256(m: &[u8]) -> Vec<u8> {
+    call(hs_keccak256, m, 32)
+}
+
+fn xof(f: LeanFn, m: &[u8], out_len: usize) -> Vec<u8> {
+    let len = u32::try_from(out_len).expect("output length fits in 32 bits");
+    let mut input = Vec::with_capacity(4 + m.len());
+    input.extend_from_slice(&len.to_be_bytes());
+    input.extend_from_slice(m);
+    call(f, &input, out_len)
+}
+
+/// SHAKE128 with `out_len` bytes of output, computed by the Lean fast specification.
+pub fn shake128(m: &[u8], out_len: usize) -> Vec<u8> {
+    xof(hs_shake128, m, out_len)
+}
+
+/// SHAKE256 with `out_len` bytes of output, computed by the Lean fast specification.
+pub fn shake256(m: &[u8], out_len: usize) -> Vec<u8> {
+    xof(hs_shake256, m, out_len)
 }

@@ -7,6 +7,7 @@ module
 
 public import HashKAT.Rsp
 public import Hash.SHA2.API
+public import Hash.Keccak.API
 public import HashFFI.Export
 
 /-!
@@ -28,6 +29,12 @@ inductive Kind where
   | messages
   /-- The SHAVS Monte Carlo test. -/
   | shavsMonte
+  /-- The SHA3VS Monte Carlo test for the SHA-3 hash functions. -/
+  | sha3Monte
+  /-- `Msg`/`Output` records of an extendable-output function. -/
+  | xof (f : ByteArray → Nat → ByteArray)
+  /-- The SHA3VS Monte Carlo test for SHAKE. -/
+  | shakeMonte (f : ByteArray → Nat → ByteArray)
 
 /-- A test file and the function it tests. -/
 structure TestFile where
@@ -66,13 +73,28 @@ def shavsStreamed {α : Type} [SHA2.Fast.Word α] (name : String) (s : SHA2.Fast
   [⟨s!"nist-cavp-shs/{name}ShortMsg.rsp", streamed s, .messages, true⟩,
    ⟨s!"nist-cavp-shs/{name}LongMsg.rsp", streamed s, .messages, true⟩]
 
+/-- The SHA3VS files of one SHA-3 hash function. -/
+def sha3vs (name : String) (hash : ByteArray → ByteArray) : List TestFile :=
+  [⟨s!"nist-cavp-sha3/{name}ShortMsg.rsp", hash, .messages, false⟩,
+   ⟨s!"nist-cavp-sha3/{name}LongMsg.rsp", hash, .messages, false⟩,
+   ⟨s!"nist-cavp-sha3/{name}Monte.rsp", hash, .sha3Monte, false⟩]
+
+/-- The SHA3VS files of one SHAKE function. -/
+def shakevs (name : String) (xof : ByteArray → Nat → ByteArray) : List TestFile :=
+  [⟨s!"nist-cavp-sha3/{name}ShortMsg.rsp", id, .xof xof, false⟩,
+   ⟨s!"nist-cavp-sha3/{name}LongMsg.rsp", id, .xof xof, false⟩,
+   ⟨s!"nist-cavp-sha3/{name}VariableOut.rsp", id, .xof xof, false⟩,
+   ⟨s!"nist-cavp-sha3/{name}Monte.rsp", id, .shakeMonte xof, false⟩]
+
 /-- Every test file. -/
 def testFiles : List TestFile :=
   shavs "SHA224" sha224 ++ shavs "SHA256" sha256 ++ shavs "SHA384" sha384 ++
   shavs "SHA512" sha512 ++ shavs "SHA512_224" sha512t224 ++ shavs "SHA512_256" sha512t256 ++
   shavsStreamed "SHA224" sha224Init ++ shavsStreamed "SHA256" sha256Init ++
   shavsStreamed "SHA384" sha384Init ++ shavsStreamed "SHA512" sha512Init ++
-  shavsStreamed "SHA512_224" sha512t224Init ++ shavsStreamed "SHA512_256" sha512t256Init
+  shavsStreamed "SHA512_224" sha512t224Init ++ shavsStreamed "SHA512_256" sha512t256Init ++
+  sha3vs "SHA3_224" sha3x224 ++ sha3vs "SHA3_256" sha3x256 ++ sha3vs "SHA3_384" sha3x384 ++
+  sha3vs "SHA3_512" sha3x512 ++ shakevs "SHAKE128" shake128 ++ shakevs "SHAKE256" shake256
 
 public def main : IO UInt32 := do
   let mut total := 0
@@ -82,12 +104,15 @@ public def main : IO UInt32 := do
     let outcome := match f.kind with
       | .messages => runMessageFile f.hash contents
       | .shavsMonte => runShavsMonte f.hash contents
+      | .sha3Monte => runSha3Monte f.hash contents
+      | .xof xof => runXofFile xof contents
+      | .shakeMonte xof => runShakeMonte xof contents
     total := total + outcome.passed + outcome.failures.length
     failed := failed + outcome.failures.length
     let status := if outcome.failures.isEmpty then "ok" else "FAILED"
     let mode := match f.kind with
       | .messages => if f.streaming then " (streamed)" else ""
-      | .shavsMonte => ""
+      | _ => ""
     IO.println s!"{status}  {f.path}{mode}: {outcome.passed} passed, {outcome.failures.length} failed"
     for e in outcome.failures.take 5 do
       IO.println s!"        {e}"

@@ -6,5 +6,6 @@ Authors: Derek Sorensen
 module
 
 import HashTests.SHA2
+import HashTests.Keccak
 import HashTests.Audit
 import HashTests.Axioms

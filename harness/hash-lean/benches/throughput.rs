@@ -8,6 +8,7 @@
 use aws_lc_rs::digest;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 use sha2::Digest;
+use tiny_keccak::Hasher;
 use std::time::Duration;
 
 const SIZES: [usize; 4] = [64, 1024, 64 * 1024, 1024 * 1024];
@@ -38,5 +39,24 @@ fn sha2(c: &mut Criterion) {
     ]);
 }
 
-criterion_group!(benches, sha2);
+fn keccak(c: &mut Criterion) {
+    bench_hash(c, "SHA3-256", &[
+        ("lean", &|m| hash_lean::sha3_256(m)),
+        ("rustcrypto", &|m| sha3::Sha3_256::digest(m).to_vec()),
+        ("aws-lc", &|m| digest::digest(&digest::SHA3_256, m).as_ref().to_vec()),
+    ]);
+    bench_hash(c, "Keccak-256", &[
+        ("lean", &|m| hash_lean::keccak256(m)),
+        ("rustcrypto", &|m| sha3::Keccak256::digest(m).to_vec()),
+        ("tiny-keccak", &|m| {
+            let mut k = tiny_keccak::Keccak::v256();
+            k.update(m);
+            let mut out = vec![0u8; 32];
+            k.finalize(&mut out);
+            out
+        }),
+    ]);
+}
+
+criterion_group!(benches, sha2, keccak);
 criterion_main!(benches);

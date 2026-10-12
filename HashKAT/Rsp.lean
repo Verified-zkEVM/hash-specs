@@ -68,9 +68,9 @@ def hexField (r : Record) (key : String) : Except String ByteArray := do
   return b
 
 /-- The message of a `Len`/`Msg` record. Byte-oriented files encode the empty message as
-`Len = 0`, `Msg = 00`. -/
+`Len = 0`, `Msg = 00`. Records without `Len` (SHA3VS variable-output files) use the whole `Msg`. -/
 def message (r : Record) : Except String ByteArray := do
-  let some len := (r.get? "Len").bind String.toNat? | throw "missing Len"
+  let some len := (r.get? "Len").bind String.toNat? | hexField r "Msg"
   if len % 8 != 0 then throw s!"bit-oriented message of length {len}"
   let msg ← hexField r "Msg"
   return msg.extract 0 (len / 8)
@@ -118,6 +118,82 @@ def runShavsMonte (hash : ByteArray → ByteArray) (contents : String) : Outcome
       md2 := md3
     seed := md2
     if md2 == expected then passed := passed + 1
+    else failures := s!"COUNT = {count}" :: failures
+  return ⟨passed, failures.reverse⟩
+
+/-- The value of a parameter `[key = value]`, as a number. -/
+def Record.param? (r : Record) (key : String) : Option Nat :=
+  ((r.params.find? (·.1 == key)).map (·.2)).bind String.toNat?
+
+/-- Check every `Msg`/`Output` record of a SHAKE file [SHA3VS, §6.3.1, §6.3.2]. The output length
+in bits is the record's `Outputlen`, or the `[Outputlen = …]` parameter. -/
+def runXofFile (xof : ByteArray → Nat → ByteArray) (contents : String) : Outcome := Id.run do
+  let mut passed := 0
+  let mut failures : List String := []
+  for r in parseRecords contents do
+    if (r.get? "Msg").isNone then continue
+    let outBits := ((r.get? "Outputlen").bind String.toNat?).orElse fun _ => r.param? "Outputlen"
+    let some outBits := outBits | failures := "missing Outputlen" :: failures; continue
+    match message r, hexField r "Output" with
+    | .ok m, .ok out =>
+      if xof m (outBits / 8) == out then passed := passed + 1
+      else failures := s!"COUNT/Len = {(r.get? "COUNT").getD ((r.get? "Len").getD "?")}" :: failures
+    | .error e, _ | _, .error e => failures := e :: failures
+  return ⟨passed, failures.reverse⟩
+
+/-- The SHA-3 Monte Carlo test [SHA3VS, §6.2.3]: from a seed, 100 checkpoints, each the result of
+1000 iterated hashes `MDᵢ = H(MDᵢ₋₁)`. -/
+def runSha3Monte (hash : ByteArray → ByteArray) (contents : String) : Outcome := Id.run do
+  let records := parseRecords contents
+  let some seedRecord := records.find? (·.get? "Seed" |>.isSome)
+    | return ⟨0, ["no seed"]⟩
+  let .ok seed := hexField seedRecord "Seed" | return ⟨0, ["bad seed"]⟩
+  let mut md := seed
+  let mut passed := 0
+  let mut failures : List String := []
+  for r in records do
+    let some count := r.get? "COUNT" | continue
+    let .ok expected := hexField r "MD" | failures := s!"COUNT = {count}: bad MD" :: failures
+    for _ in [0:1000] do
+      md := hash md
+    if md == expected then passed := passed + 1
+    else failures := s!"COUNT = {count}" :: failures
+  return ⟨passed, failures.reverse⟩
+
+/-- The SHAKE Monte Carlo test [SHA3VS, §6.3.3]. Each of 100 checkpoints is the result of 1000
+iterations, where each iteration hashes the leftmost 128 bits of the previous output, and the
+next output length is derived from the rightmost 16 bits of the current output. -/
+def runShakeMonte (xof : ByteArray → Nat → ByteArray) (contents : String) : Outcome := Id.run do
+  let records := parseRecords contents
+  let some msgRecord := records.find? (·.get? "Msg" |>.isSome)
+    | return ⟨0, ["no Msg"]⟩
+  let .ok msg := hexField msgRecord "Msg" | return ⟨0, ["bad Msg"]⟩
+  let some minBits := msgRecord.param? "Minimum Output Length (bits)"
+    | return ⟨0, ["no minimum output length"]⟩
+  let some maxBits := msgRecord.param? "Maximum Output Length (bits)"
+    | return ⟨0, ["no maximum output length"]⟩
+  let minBytes := minBits / 8
+  let maxBytes := maxBits / 8
+  let range := maxBytes - minBytes + 1
+  let mut outLen := maxBytes
+  let mut out := msg
+  let mut passed := 0
+  let mut failures : List String := []
+  for r in records do
+    let some count := r.get? "COUNT" | continue
+    let .ok expected := hexField r "Output" | failures := s!"COUNT = {count}: bad Output" :: failures
+    let some expectedLen := (r.get? "Outputlen").bind String.toNat?
+      | failures := s!"COUNT = {count}: bad Outputlen" :: failures
+    let mut lastLen := outLen
+    for _ in [0:1000] do
+      -- The leftmost 128 bits of the previous output, padded with zero bytes if shorter.
+      let m := out.extract 0 16 ++ ByteArray.zeros (16 - min 16 out.size)
+      lastLen := outLen
+      out := xof m outLen
+      let n := out.size
+      let rightmost := 256 * (out.get! (n - 2)).toNat + (out.get! (n - 1)).toNat
+      outLen := minBytes + rightmost % range
+    if out == expected && 8 * lastLen == expectedLen then passed := passed + 1
     else failures := s!"COUNT = {count}" :: failures
   return ⟨passed, failures.reverse⟩
 
