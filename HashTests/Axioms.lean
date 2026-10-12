@@ -32,5 +32,11 @@ audit_axioms Hash.Keccak.State.ofString_toString Hash.Keccak.State.toString_ofSt
   Hash.Keccak.keccakP_eq_algorithm7 Hash.Keccak.Reference.shake128_prefix
   Hash.Keccak.Reference.shake256_prefix
 
+-- Keccak: the fast specification equals the reference [FIPS 202].
+audit_axioms Hash.Keccak.Equiv.keccakP_toString Hash.Keccak.Equiv.sponge_eq
+  Hash.Keccak.sha3x224_eq Hash.Keccak.sha3x256_eq Hash.Keccak.sha3x384_eq Hash.Keccak.sha3x512_eq
+  Hash.Keccak.shake128_eq Hash.Keccak.shake256_eq Hash.Keccak.keccak256_eq
+  Hash.Keccak.shake128_prefix Hash.Keccak.shake256_prefix
+
 -- Constructions.
 audit_axioms Hash.MerkleDamgard.iterate_append Hash.Sponge.sponge_prefix
