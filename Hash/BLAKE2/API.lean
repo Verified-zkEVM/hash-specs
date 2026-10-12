@@ -6,6 +6,7 @@ Authors: Derek Sorensen
 module
 
 public import Hash.BLAKE2.Fast
+public import Hash.BLAKE2.Stream
 
 /-!
 # BLAKE2: byte-level API
@@ -33,6 +34,14 @@ def blake2b (m : ByteArray) : ByteArray := blake2bWith .empty .empty .empty 64 m
 
 /-- BLAKE2s-256, unkeyed [RFC 7693]. -/
 def blake2s (m : ByteArray) : ByteArray := blake2sWith .empty .empty .empty 32 m
+
+/-- The initial streaming state of `blake2bWith key salt personal nn`. -/
+def blake2bInit (key salt personal : ByteArray) (nn : Nat) : BLAKE2.Fast.State UInt64 :=
+  .init UInt64 BLAKE2.blake2bParams key salt personal nn
+
+/-- The initial streaming state of `blake2sWith key salt personal nn`. -/
+def blake2sInit (key salt personal : ByteArray) (nn : Nat) : BLAKE2.Fast.State UInt32 :=
+  .init UInt32 BLAKE2.blake2sParams key salt personal nn
 
 /-- The BLAKE2b compression function `F` with any number of rounds [EIP-152]. -/
 def blake2bF (rounds : Nat) (h m : Array UInt64) (t0 t1 : UInt64) (f : Bool) : Array UInt64 :=

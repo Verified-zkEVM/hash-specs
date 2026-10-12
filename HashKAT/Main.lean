@@ -112,6 +112,15 @@ def shakevsStreamed (name : String) (s : Keccak.Fast.State) : List TestFile :=
    ⟨s!"nist-cavp-sha3/{name}LongMsg.rsp", id, .xof (keccakStreamed s), true⟩,
    ⟨s!"nist-cavp-sha3/{name}VariableOut.rsp", id, .xof (keccakStreamed s), true⟩]
 
+/-- Hash `m` incrementally with the BLAKE2 state `s` under every pattern of `piecePatterns`.
+The result is the common digest if all patterns agree, and the empty array otherwise. -/
+def blake2Streamed {α : Type} [BLAKE2.Fast.Word α] (s : BLAKE2.Fast.State α) (m : ByteArray) :
+    ByteArray :=
+  let digests := piecePatterns.map (HashFFI.blake2StreamPieces s · m)
+  match digests with
+  | d :: ds => if ds.all (· == d) then d else ByteArray.empty
+  | [] => ByteArray.empty
+
 /-- Every test file. -/
 def testFiles : List TestFile :=
   shavs "SHA224" sha224 ++ shavs "SHA256" sha256 ++ shavs "SHA384" sha384 ++
@@ -128,6 +137,12 @@ def testFiles : List TestFile :=
       .blake2Json "blake2b" fun key m nn => blake2bWith key .empty .empty nn m, false⟩,
    ⟨"blake2/blake2-kat.json", id,
       .blake2Json "blake2s" fun key m nn => blake2sWith key .empty .empty nn m, false⟩,
+   ⟨"blake2/blake2-kat.json", id,
+      .blake2Json "blake2b" fun key m nn => blake2Streamed (blake2bInit key .empty .empty nn) m,
+      true⟩,
+   ⟨"blake2/blake2-kat.json", id,
+      .blake2Json "blake2s" fun key m nn => blake2Streamed (blake2sInit key .empty .empty nn) m,
+      true⟩,
    ⟨"eip-152/vectors.txt", id, .eip152 blake2bPrecompile, false⟩]
 
 public def main : IO UInt32 := do
@@ -148,7 +163,7 @@ public def main : IO UInt32 := do
     failed := failed + outcome.failures.length
     let status := if outcome.failures.isEmpty then "ok" else "FAILED"
     let mode := match f.kind with
-      | .blake2Json name _ => s!" ({name})"
+      | .blake2Json name _ => if f.streaming then s!" ({name}, streamed)" else s!" ({name})"
       | _ => if f.streaming then " (streamed)" else ""
     IO.println s!"{status}  {f.path}{mode}: {outcome.passed} passed, {outcome.failures.length} failed"
     for e in outcome.failures.take 5 do

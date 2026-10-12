@@ -7,6 +7,7 @@ module
 
 public import Hash.SHA2.API
 public import Hash.Keccak.API
+public import Hash.BLAKE2.API
 
 /-!
 # C entry points for the differential-testing harness
@@ -16,7 +17,8 @@ that the Rust harness in `harness/` can call the fast specifications in-process.
 must stay Mathlib-free: it is linked into the harness as a static library together with Lean's
 runtime, and importing Mathlib would make that library enormous.
 
-`hs_sha2_stream` exposes the streaming interface for testing: it hashes a message in pieces of
+`hs_sha2_stream`, `hs_keccak_stream` and `hs_blake2_stream` expose the streaming interfaces for
+testing: it hashes a message in pieces of
 given sizes, so the harness can check that every way of splitting a message gives the same digest.
 
 Arguments are owned (exported functions cannot take borrowed parameters), so the caller passes
@@ -135,6 +137,64 @@ Returns the empty array on malformed input. -/
   | 4 => keccakStreamPieces Hash.shake128Init sizes m d
   | 5 => keccakStreamPieces Hash.shake256Init sizes m d
   | 6 => keccakStreamPieces Hash.keccak256Init sizes m 32
+  | _ => ByteArray.empty
+
+/-- Split a BLAKE2 input: the output length, key length, salt length and personalisation length
+(one byte each), then the key, salt, personalisation and message. -/
+def blake2Input (input : ByteArray) :
+    Nat × ByteArray × ByteArray × ByteArray × ByteArray :=
+  let nn := (input.get! 0).toNat
+  let kk := (input.get! 1).toNat
+  let sl := (input.get! 2).toNat
+  let pl := (input.get! 3).toNat
+  let a := 4 + kk
+  let b := a + sl
+  let c := b + pl
+  (nn, input.extract 4 a, input.extract a b, input.extract b c, input.extract c input.size)
+
+/-- BLAKE2b with key, salt, personalisation and output length, encoded as for `blake2Input`. -/
+@[export hs_blake2b] def blake2b (input : ByteArray) : ByteArray :=
+  let (nn, key, salt, personal, m) := blake2Input input
+  Hash.blake2bWith key salt personal nn m
+/-- BLAKE2s, with input as for `blake2b`. -/
+@[export hs_blake2s] def blake2s (input : ByteArray) : ByteArray :=
+  let (nn, key, salt, personal, m) := blake2Input input
+  Hash.blake2sWith key salt personal nn m
+
+/-- The EIP-152 BLAKE2b `F` precompile; the empty array on an invalid input. -/
+@[export hs_blake2b_f] def blake2bF (input : ByteArray) : ByteArray :=
+  match Hash.blake2bPrecompile input with
+  | .ok out => out
+  | .error _ => ByteArray.empty
+
+/-- Add `m` to the BLAKE2 state `s` in pieces whose sizes cycle through `sizes`, then
+finalize. -/
+def blake2StreamPieces {α : Type} [Hash.BLAKE2.Fast.Word α] (s : Hash.BLAKE2.Fast.State α)
+    (sizes : List Nat) (m : ByteArray) : ByteArray := Id.run do
+  let mut s := s
+  let mut off := 0
+  let mut i := 0
+  -- If every size were 0 the loop would never advance, so fall back to single bytes.
+  let sizes := if sizes.all (· == 0) then [1] else sizes
+  while off < m.size do
+    let n := sizes.getD (i % sizes.length) 1
+    s := s.update (m.extract off (off + n))
+    off := off + n
+    i := i + 1
+  return s.finalize
+
+/-- The BLAKE2 streaming interface, for testing. The input is a variant byte (0 for BLAKE2b, 1
+for BLAKE2s), a count `k`, `k` big-endian 16-bit piece sizes, and then the input of `blake2b`.
+Returns the empty array on malformed input. -/
+@[export hs_blake2_stream] def blake2Stream (input : ByteArray) : ByteArray :=
+  let k := (input.get! 1).toNat
+  if input.size < 6 + 2 * k then ByteArray.empty else
+  let sizes := (List.range k).map fun j =>
+    256 * (input.get! (2 + 2 * j)).toNat + (input.get! (3 + 2 * j)).toNat
+  let (nn, key, salt, personal, m) := blake2Input (input.extract (2 + 2 * k) input.size)
+  match (input.get! 0).toNat with
+  | 0 => blake2StreamPieces (Hash.blake2bInit key salt personal nn) sizes m
+  | 1 => blake2StreamPieces (Hash.blake2sInit key salt personal nn) sizes m
   | _ => ByteArray.empty
 
 end HashFFI
