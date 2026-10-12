@@ -7,6 +7,7 @@ module
 
 public import Hash.Init
 public import Hash.Keccak.KeccakP
+public import Hash.Prelude.LittleEndianLemmas
 public import Mathlib.Tactic.Ring
 
 /-!
@@ -19,34 +20,6 @@ and the evaluation-friendly definition `Hash.Keccak.keccakP` is Algorithm 7 as w
 public section
 
 namespace Hash.Keccak
-
-/-- Indexing a concatenation of blocks of a common length `m`. -/
-theorem getElem?_flatMap_of_length {α β : Type} (l : List α) (f : α → List β) (m : Nat)
-    (hf : ∀ a ∈ l, (f a).length = m) (i j : Nat) (hi : i < l.length) (hj : j < m) :
-    (l.flatMap f)[i * m + j]? = (f l[i])[j]? := by
-  induction l generalizing i with
-  | nil => simp at hi
-  | cons a l ih =>
-    rw [List.flatMap_cons]
-    have ha : (f a).length = m := hf a (by simp)
-    cases i with
-    | zero =>
-      rw [Nat.zero_mul, Nat.zero_add, List.getElem?_append_left (by omega)]
-      rfl
-    | succ i =>
-      rw [List.getElem?_append_right (by rw [ha, Nat.succ_mul]; omega), ha,
-        show (i + 1) * m + j - m = i * m + j by rw [Nat.succ_mul]; omega,
-        ih (fun b hb => hf b (by simp [hb])) i (by simpa using hi)]
-      rfl
-
-theorem length_flatMap_of_length {α β : Type} (l : List α) (f : α → List β) (m : Nat)
-    (hf : ∀ a ∈ l, (f a).length = m) : (l.flatMap f).length = l.length * m := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    rw [List.flatMap_cons, List.length_append, hf a (by simp),
-      ih (fun b hb => hf b (by simp [hb]))]
-    simp [Nat.succ_mul, Nat.add_comm]
 
 namespace State
 
