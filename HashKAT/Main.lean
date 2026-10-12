@@ -8,6 +8,8 @@ module
 public import HashKAT.Rsp
 public import Hash.SHA2.API
 public import Hash.Keccak.API
+public import Hash.BLAKE2.API
+public import HashKAT.Json
 public import HashFFI.Export
 
 /-!
@@ -35,6 +37,10 @@ inductive Kind where
   | xof (f : ByteArray → Nat → ByteArray)
   /-- The SHA3VS Monte Carlo test for SHAKE. -/
   | shakeMonte (f : ByteArray → Nat → ByteArray)
+  /-- Records of `blake2-kat.json` for one function: `hash key message outputLength`. -/
+  | blake2Json (name : String) (f : ByteArray → ByteArray → Nat → ByteArray)
+  /-- EIP-152 records for the BLAKE2b `F` precompile. -/
+  | eip152 (f : ByteArray → Except String ByteArray)
 
 /-- A test file and the function it tests. -/
 structure TestFile where
@@ -117,7 +123,12 @@ def testFiles : List TestFile :=
   sha3vs "SHA3_512" sha3x512 ++ shakevs "SHAKE128" shake128 ++ shakevs "SHAKE256" shake256 ++
   sha3vsStreamed "SHA3_224" sha3x224Init ++ sha3vsStreamed "SHA3_256" sha3x256Init ++
   sha3vsStreamed "SHA3_384" sha3x384Init ++ sha3vsStreamed "SHA3_512" sha3x512Init ++
-  shakevsStreamed "SHAKE128" shake128Init ++ shakevsStreamed "SHAKE256" shake256Init
+  shakevsStreamed "SHAKE128" shake128Init ++ shakevsStreamed "SHAKE256" shake256Init ++
+  [⟨"blake2/blake2-kat.json", id,
+      .blake2Json "blake2b" fun key m nn => blake2bWith key .empty .empty nn m, false⟩,
+   ⟨"blake2/blake2-kat.json", id,
+      .blake2Json "blake2s" fun key m nn => blake2sWith key .empty .empty nn m, false⟩,
+   ⟨"eip-152/vectors.txt", id, .eip152 blake2bPrecompile, false⟩]
 
 public def main : IO UInt32 := do
   let mut total := 0
@@ -130,10 +141,15 @@ public def main : IO UInt32 := do
       | .sha3Monte => runSha3Monte f.hash contents
       | .xof xof => runXofFile xof contents
       | .shakeMonte xof => runShakeMonte xof contents
+      | .blake2Json name f => runBlake2Json name f contents
+      -- EIP-152 vector 8 (2³² − 1 rounds) is skipped: too slow for a specification.
+      | .eip152 f => runEip152 f 1000000 contents
     total := total + outcome.passed + outcome.failures.length
     failed := failed + outcome.failures.length
     let status := if outcome.failures.isEmpty then "ok" else "FAILED"
-    let mode := if f.streaming then " (streamed)" else ""
+    let mode := match f.kind with
+      | .blake2Json name _ => s!" ({name})"
+      | _ => if f.streaming then " (streamed)" else ""
     IO.println s!"{status}  {f.path}{mode}: {outcome.passed} passed, {outcome.failures.length} failed"
     for e in outcome.failures.take 5 do
       IO.println s!"        {e}"

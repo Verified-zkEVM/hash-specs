@@ -82,3 +82,32 @@ from the source below; the SHA-256 of every file is listed so that the copies ca
 | `SHAKE256Monte.rsp` | `95e5929344f4309e70f16e42620bd393d7a69b3f2577231ff5adcda1b395c6c8` |
 | `SHAKE256ShortMsg.rsp` | `a21dd9180a0f0139fa8d4056919f8194ddaca2f36dc5aafa70723682099d64f5` |
 | `SHAKE256VariableOut.rsp` | `90fb72336900b22284477b76d0868fc2822ae42a114079c6c8a7fbda12eb52ca` |
+
+## `blake2/`: the BLAKE2 team's known-answer tests
+
+- **Source:** `testvectors/blake2-kat.json` of the reference repository
+  <https://github.com/BLAKE2/BLAKE2> at commit `ed1974ea83433eba7b2d95c5dcd9ac33cb847913`
+  (downloaded 2026-10-12), copied unmodified.
+- **Licence:** CC0 1.0 Universal (the repository's `COPYING`).
+- **Format:** a JSON list of records with fields `hash`, `in`, `key` and `out`. `hash-kat` checks
+  the 512 `blake2b` and 512 `blake2s` records (unkeyed and keyed, messages of 0 to 255 bytes);
+  the tree and XOF variants (`blake2bp`, `blake2sp`, `blake2xb`, `blake2xs`) are not specified by
+  this library.
+
+| File | SHA-256 |
+|---|---|
+| `blake2-kat.json` | `5031ac14800798ae15cee79c04d65e326a575f2c968c7e2846a79bd07a1c0e61` |
+
+## `eip-152/`: the BLAKE2b `F` precompile
+
+- **Source:** the "Test Cases" section of EIP-152, <https://eips.ethereum.org/EIPS/eip-152>
+  (`EIPS/eip-152.md` of <https://github.com/ethereum/EIPs>, downloaded 2026-10-12, SHA-256
+  `5ef0b093f024a65ea850c2f0b431a6c636a5b391d24b9183755e17a8eaeea913`). Vectors 0–8 were
+  extracted into `vectors.txt` without changing any input, output or message.
+- **Licence:** CC0 (EIP text).
+- **Note:** vector 8 asks for 2³² − 1 rounds. It is skipped by `hash-kat`, which would take far
+  too long on a specification; the `F` function is otherwise identical for every round count.
+
+| File | SHA-256 |
+|---|---|
+| `vectors.txt` | `64455db2a5bb462e1005a7244500f3e620e6b82dfc9b9698e4a4148632cec564` |

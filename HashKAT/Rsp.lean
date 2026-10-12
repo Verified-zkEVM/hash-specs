@@ -197,4 +197,26 @@ def runShakeMonte (xof : ByteArray → Nat → ByteArray) (contents : String) : 
     else failures := s!"COUNT = {count}" :: failures
   return ⟨passed, failures.reverse⟩
 
+/-- Check the EIP-152 records of the `F` precompile: each `Input` gives either an `Output` or an
+`Error` message. Records whose input asks for more than `maxRounds` rounds are skipped: EIP-152
+vector 8 asks for 2³² − 1 rounds, too many for a specification. -/
+def runEip152 (precompile : ByteArray → Except String ByteArray) (maxRounds : Nat)
+    (contents : String) : Outcome := Id.run do
+  let mut passed := 0
+  let mut failures : List String := []
+  for r in parseRecords contents do
+    let some count := r.get? "COUNT" | continue
+    let .ok input := hexField r "Input" | failures := s!"COUNT = {count}: bad Input" :: failures
+    let rounds := (List.range 4).foldl (fun n i => 256 * n + (input.get! i).toNat) 0
+    if input.size == 213 && rounds > maxRounds then continue
+    match precompile input, r.get? "Output", r.get? "Error" with
+    | .ok out, some expected, _ =>
+      if out.toHex == expected then passed := passed + 1
+      else failures := s!"COUNT = {count}" :: failures
+    | .error e, _, some expected =>
+      if e == expected then passed := passed + 1
+      else failures := s!"COUNT = {count}: error {e}" :: failures
+    | _, _, _ => failures := s!"COUNT = {count}: wrong outcome" :: failures
+  return ⟨passed, failures.reverse⟩
+
 end HashKAT

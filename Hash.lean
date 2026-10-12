@@ -6,6 +6,10 @@ Authors: Derek Sorensen
 module
 
 public import Hash.Init
+public import Hash.BLAKE2.API
+public import Hash.BLAKE2.Constants
+public import Hash.BLAKE2.Fast
+public import Hash.BLAKE2.Reference
 public import Hash.Construction.MerkleDamgard
 public import Hash.Construction.Sponge
 public import Hash.Construction.SpongeLemmas
