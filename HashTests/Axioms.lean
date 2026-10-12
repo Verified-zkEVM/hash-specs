@@ -52,6 +52,7 @@ audit_axioms Hash.BLAKE2.Equiv.hashWith_eq Hash.BLAKE2.Equiv.F_eq Hash.BLAKE2.bl
 -- BLAKE3: the fast specification equals the reference [BLAKE3, §2].
 audit_axioms Hash.BLAKE3.Equiv.hashWith_eq Hash.BLAKE3.blake3Xof_eq Hash.BLAKE3.blake3_eq
   Hash.BLAKE3.blake3Keyed_eq Hash.BLAKE3.blake3DeriveKey_eq Hash.Tree.root_map
+  Hash.BLAKE3.blake3Xof_prefix
 
 -- BLAKE3: streaming equals one-shot [BLAKE3, §5.1].
 audit_axioms Hash.BLAKE3.Fast.State.finalize_updates Hash.blake3Init_eq Hash.blake3KeyedInit_eq

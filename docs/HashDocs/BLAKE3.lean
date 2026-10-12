@@ -298,7 +298,8 @@ The evidence that the Lean specification is the BLAKE3 of its specification, as 
   * Streaming = one-shot
   * Proved for every key, mode, output length and split of the input
     (`Hash.BLAKE3.Fast.State.finalize_updates`), from the generic theorem that the
-    chaining-value stack computes the tree (`Hash.Tree.finish_pushAll`).
+    chaining-value stack computes the tree (`Hash.Tree.finish_pushAll`). Shorter outputs are
+    proved to be prefixes of longer ones (`Hash.BLAKE3.blake3Xof_prefix`).
 *
   * Known-answer tests
   * All 35 cases of the BLAKE3 team's `test_vectors.json` pass in all three modes, at the full

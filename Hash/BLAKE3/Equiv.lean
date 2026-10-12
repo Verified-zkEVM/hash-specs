@@ -272,6 +272,20 @@ theorem length_rootBytes (o : Reference.Output) (d : Nat) : (o.rootBytes d).leng
     List.length_range]
   omega
 
+/-- Prefix consistency of the reference output: asking for fewer bytes gives a prefix of the
+longer output [BLAKE3, §2.6]. -/
+theorem rootBytes_prefix (o : Reference.Output) {d₁ d₂ : Nat} (h : d₁ ≤ d₂) :
+    o.rootBytes d₁ = (o.rootBytes d₂).take d₁ := by
+  simp only [Reference.Output.rootBytes, List.take_take, Nat.min_eq_left h]
+  set F := fun i => Reference.wordsToBytes (Reference.compress o.cv o.block i o.blockLen
+    (o.flags ||| ROOT))
+  obtain ⟨k, hk⟩ : ∃ k, (d₂ + 63) / 64 = (d₁ + 63) / 64 + k :=
+    ⟨(d₂ + 63) / 64 - (d₁ + 63) / 64, by omega⟩
+  have hlen : ((List.range ((d₁ + 63) / 64)).flatMap F).length = (d₁ + 63) / 64 * 64 :=
+    by rw [length_flatMap_of_length _ _ 64 (fun i _ => by
+      simp only [F]; rw [length_wordsToBytes, length_compress]), List.length_range]
+  rw [hk, List.range_add, List.flatMap_append, List.take_append_of_le_length (by omega)]
+
 end Hash.BLAKE3.Equiv
 
 namespace Hash.BLAKE3
@@ -283,6 +297,12 @@ theorem blake3Xof_eq (m : ByteArray) (d : Nat) :
 
 theorem blake3_eq (m : ByteArray) : (blake3 m).data.toList = Reference.hash m.data.toList 32 :=
   blake3Xof_eq m 32
+
+/-- Shorter BLAKE3 outputs are prefixes of longer ones [BLAKE3, §2.6]. -/
+theorem blake3Xof_prefix (m : ByteArray) {d₁ d₂ : Nat} (h : d₁ ≤ d₂) :
+    (blake3Xof m d₁).data.toList = ((blake3Xof m d₂).data.toList).take d₁ := by
+  rw [blake3Xof_eq, blake3Xof_eq, Reference.hash, Reference.hash, Reference.hashWith,
+    Reference.hashWith, Equiv.rootBytes_prefix _ h]
 
 /-- BLAKE3 `keyed_hash` computes the reference for every 32-byte key. -/
 theorem blake3Keyed_eq (key m : ByteArray) (d : Nat) (h : key.size = 32) :
