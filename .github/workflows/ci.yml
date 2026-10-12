@@ -63,7 +63,11 @@ jobs:
         env:
           HASH_LEAN_SKIP_LAKE: "1"
         run: cargo test --release
-      - uses: dtolnay/rust-toolchain@nightly
+      # Pinned: the nightly of 2026-10-11 crashes (an internal compiler error) compiling
+      # Plonky3's p3-monty-31 with the fuzzing flags.
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2026-03-07
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz --locked
       - name: Fuzzing smoke run (60 s per target)
@@ -75,8 +79,8 @@ jobs:
           HASH_LEAN_SKIP_LAKE: "1"
           ASAN_OPTIONS: detect_leaks=0
         run: |
-          for target in $(cargo +nightly fuzz list); do
-            cargo +nightly fuzz run "$target" -- -max_total_time=60 -max_len=4096
+          for target in $(cargo +nightly-2026-03-07 fuzz list); do
+            cargo +nightly-2026-03-07 fuzz run "$target" -- -max_total_time=60 -max_len=4096
           done
 
   # The Verso book.
