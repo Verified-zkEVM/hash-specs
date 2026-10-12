@@ -27,6 +27,11 @@ eip-152 = "0.1.0"
 blake3 = "1"
 blake3-reference = { path = "../blake3-reference" }
 revm-precompile = { version = "43.0.3", default-features = false }
+light-poseidon = "0.4"
+ark-bn254 = "0.5"
+ark-ff = "0.5"
+poseidon-rs = "0.0.10"
+ff = { version = "0.11", package = "ff_ce" }
 
 [[bench]]
 name = "throughput"

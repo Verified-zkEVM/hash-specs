@@ -3,8 +3,9 @@
 This Cargo workspace links the fast Lean specifications into Rust in-process and compares them
 with independent implementations (ROADMAP.md §4).
 
-- `hash-lean/`: the bindings. `build.rs` runs `lake build HashFFI:static Hash:static` (skip
-  with `HASH_LEAN_SKIP_LAKE=1`) and links the Lean static libraries and runtime. A small C shim
+- `hash-lean/`: the bindings. `build.rs` runs `lake build HashFFI:static Hash:static
+  HashZK:static` and builds CompPoly's zero-import Montgomery arithmetic (skip with
+  `HASH_LEAN_SKIP_LAKE=1`), and links the Lean static libraries and runtime. A small C shim
   (`csrc/shim.c`) wraps the `static inline` helpers of `lean.h`. Each hash is a safe function
   `fn(&[u8]) -> Vec<u8>`; streaming interfaces are exposed as functions that absorb a message
   in pieces of given sizes (for example `sha2_stream`).
@@ -26,6 +27,7 @@ with independent implementations (ROADMAP.md §4).
 | BLAKE2b, BLAKE2s (key, salt, personalisation, any output length) | `Hash.blake2bWith`, `Hash.blake2sWith`, `Hash.blake2*Init` (streaming) | `blake2b_simd`/`blake2s_simd`, RustCrypto `blake2` (unkeyed any length; keyed with salt and personalisation at full length) |
 | BLAKE2b `F` precompile (EIP-152) | `Hash.blake2bPrecompile` | `revm-precompile`, `eip-152` |
 | BLAKE3 (`hash`, `keyed_hash`, `derive_key`, any output length) | `Hash.blake3Xof`, `Hash.blake3Keyed`, `Hash.blake3DeriveKey`, `Hash.blake3*Init` (streaming) | `blake3`, the BLAKE3 team's reference implementation (`blake3-reference/`, vendored) |
+| Poseidon, circomlib's BN254 instances (1 to 16 inputs) | `HashZK.Raw.Poseidon.poseidonNat` (proved equal to `Hash.ZK.Poseidon.Circom.poseidon`) | `poseidon-rs` (all widths), `light-poseidon` (up to 12 inputs) |
 
 Lineage: RustCrypto `sha3` and `tiny-keccak` are independent Rust implementations; AWS-LC's SHA-3
 descends from BoringSSL/OpenSSL. `alloy-primitives::keccak256` uses `tiny-keccak` by default, so
@@ -36,7 +38,10 @@ independent check; the `eip-152` crate (Parity's OpenEthereum implementation, pu
 Tetsy Vapory fork) is independent of both. `eip-152` is GPL-3.0 and is only a dev-dependency of
 the tests; it is not linked into anything distributed. The BLAKE3 reference implementation is
 by the same team as the `blake3` crate but shares no code with it: it is a minimal portable
-implementation, vendored unmodified in `blake3-reference/`.
+implementation, vendored unmodified in `blake3-reference/`. `poseidon-rs` (iden3) carries
+circomlib's published constant tables, and `light-poseidon` (Light Protocol) constants generated
+with the Poseidon reference script; the Lean specification derives its constants from the Grain
+LFSR itself, so agreement also checks the constants.
 
 ```sh
 cd hash-lean && cargo test --release          # differential tests

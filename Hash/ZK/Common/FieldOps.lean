@@ -60,20 +60,27 @@ structure Hom {A B : Type} [FieldOps A] [FieldOps B] (f : A → B) : Prop where
   map_ofNat : ∀ n, f (ofNat n) = ofNat n
   map_inv : ∀ x, f (inv x) = inv (f x)
 
-theorem Hom.map_powAux {A B : Type} [FieldOps A] [FieldOps B] {f : A → B} (hf : Hom f) :
+/-- Square-and-multiply commutes with a map that preserves the unit and multiplication. -/
+theorem map_powAux {A B : Type} [FieldOps A] [FieldOps B] {f : A → B} (hone : f one = one)
+    (hmul : ∀ x y, f (mul x y) = mul (f x) (f y)) :
     ∀ (fuel n : Nat) (b acc : A), f (powAux fuel n b acc) = powAux fuel n (f b) (f acc)
   | 0, _, _, _ => rfl
   | fuel + 1, n, b, acc => by
     simp only [powAux]
     split
     · rfl
-    · rw [Hom.map_powAux hf fuel, hf.map_mul]
+    · rw [map_powAux hone hmul fuel, hmul]
       congr 1
-      split <;> simp only [hf.map_mul]
+      split <;> simp only [hmul]
+
+theorem map_pow {A B : Type} [FieldOps A] [FieldOps B] {f : A → B} (hone : f one = one)
+    (hmul : ∀ x y, f (mul x y) = mul (f x) (f y)) (x : A) (n : Nat) :
+    f (pow x n) = pow (f x) n := by
+  rw [pow, pow, map_powAux hone hmul, hone]
 
 theorem Hom.map_pow {A B : Type} [FieldOps A] [FieldOps B] {f : A → B} (hf : Hom f) (x : A)
-    (n : Nat) : f (pow x n) = pow (f x) n := by
-  rw [pow, pow, hf.map_powAux, hf.map_one]
+    (n : Nat) : f (pow x n) = pow (f x) n :=
+  FieldOps.map_pow hf.map_one hf.map_mul x n
 
 end FieldOps
 

@@ -38,7 +38,7 @@ jobs:
           test: false
           lint: false
       - name: Build the Lean static libraries
-        run: lake build HashFFI:static Hash:static
+        run: lake build HashFFI:static Hash:static HashZK:static +CompPoly.Fields.Montgomery.Native64x8Defs:o
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo install cargo-fuzz --locked
       - name: Fuzz for 30 minutes

@@ -1,10 +1,16 @@
-//! Builds the Lean static libraries with Lake and links them, together with the Lean runtime,
-//! into this crate.
+//! Builds the Lean static libraries with Lake and links them, together with the Lean runtime and
+//! CompPoly's zero-import Montgomery arithmetic, into this crate.
 //!
 //! Set `HASH_LEAN_SKIP_LAKE=1` to skip the `lake build` step (for example in CI, after building
 //! the Lean libraries in an earlier step).
 
 use std::{env, path::PathBuf, process::Command};
+
+/// The Lake target building CompPoly's zero-import Montgomery arithmetic, which `HashZK.Raw` uses.
+const COMPPOLY_FACET: &str = "+CompPoly.Fields.Montgomery.Native64x8Defs:o";
+/// The object file it produces.
+const COMPPOLY_OBJECT: &str =
+    ".lake/packages/CompPoly/.lake/build/ir/CompPoly/Fields/Montgomery/Native64x8Defs.c.o.export";
 
 fn main() {
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
@@ -12,7 +18,7 @@ fn main() {
 
     if env::var_os("HASH_LEAN_SKIP_LAKE").is_none() {
         let status = Command::new("lake")
-            .args(["build", "HashFFI:static", "Hash:static"])
+            .args(["build", "HashFFI:static", "Hash:static", "HashZK:static", COMPPOLY_FACET])
             .current_dir(&root)
             .status()
             .expect("failed to run `lake`; is elan installed?");
@@ -36,15 +42,42 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", prefix.join("lib/lean").display());
     println!("cargo:rustc-link-search=native={}", prefix.join("lib").display());
 
+    // CompPoly's runtime arithmetic is built as a single object file; archive it.
+    let out = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let comppoly = root.join(COMPPOLY_OBJECT);
+    assert!(comppoly.exists(), "{} not found", comppoly.display());
+    let _ = std::fs::remove_file(out.join("libhash_comppoly.a"));
+    let status = Command::new("ar")
+        .arg("rcs")
+        .arg(out.join("libhash_comppoly.a"))
+        .arg(&comppoly)
+        .status()
+        .expect("failed to run `ar`");
+    assert!(status.success(), "`ar rcs` failed");
+    println!("cargo:rustc-link-search=native={}", out.display());
+
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
-    let lean_libs = ["hash_x2dspecs_HashFFI", "hash_x2dspecs_Hash", "Init", "leanrt", "uv", "gmp"];
+    let lean_libs = [
+        "hash_x2dspecs_HashFFI",
+        "hash_x2dspecs_HashZK",
+        "hash_x2dspecs_Hash",
+        "hash_comppoly",
+        "Init",
+        "leanrt",
+        "uv",
+        "gmp",
+    ];
     if target_os == "linux" {
         // The Lean archives refer to each other, and GNU ld scans each archive once, so merge
         // them into a single archive, within which it resolves references in any order. The Lean
         // runtime is built against the static libc++ shipped in the toolchain's `lib`, not the
         // system's libstdc++.
-        let dirs = [root.join(".lake/build/lib"), prefix.join("lib/lean"), prefix.join("lib")];
-        let out = PathBuf::from(env::var("OUT_DIR").unwrap());
+        let dirs = [
+            root.join(".lake/build/lib"),
+            out.clone(),
+            prefix.join("lib/lean"),
+            prefix.join("lib"),
+        ];
         let mut script = format!("CREATE {}\n", out.join("libhash_lean_all.a").display());
         for lib in lean_libs.iter().chain(&["c++", "c++abi"]) {
             let file = format!("lib{lib}.a");
@@ -60,7 +93,6 @@ fn main() {
             .expect("failed to run `ar`");
         std::io::Write::write_all(ar.stdin.as_mut().unwrap(), script.as_bytes()).unwrap();
         assert!(ar.wait().unwrap().success(), "`ar -M` failed");
-        println!("cargo:rustc-link-search=native={}", out.display());
         println!("cargo:rustc-link-lib=static=hash_lean_all");
         for lib in ["m", "pthread", "dl"] {
             println!("cargo:rustc-link-lib=dylib={lib}");
@@ -72,7 +104,16 @@ fn main() {
         println!("cargo:rustc-link-lib=dylib=c++");
     }
 
-    for dir in ["Hash", "HashFFI", "Hash.lean", "HashFFI.lean", "lakefile.toml", "lean-toolchain"] {
+    for dir in [
+        "Hash",
+        "HashFFI",
+        "HashZK",
+        "Hash.lean",
+        "HashFFI.lean",
+        "HashZK.lean",
+        "lakefile.toml",
+        "lean-toolchain",
+    ] {
         println!("cargo:rerun-if-changed={}", root.join(dir).display());
     }
     println!("cargo:rerun-if-changed=csrc/shim.c");

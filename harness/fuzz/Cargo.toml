@@ -20,6 +20,12 @@ revm-precompile = { version = "43.0.3", default-features = false }
 sha2 = "0.10"
 sha3 = "0.10"
 tiny-keccak = { version = "2", features = ["sha3", "keccak", "shake"] }
+light-poseidon = "0.4"
+ark-bn254 = "0.5"
+ark-ff = "0.5"
+poseidon-rs = "0.0.10"
+hex = "0.4"
+ff = { version = "0.11", package = "ff_ce" }
 
 [[bin]]
 name = "sha2"
@@ -80,6 +86,13 @@ bench = false
 [[bin]]
 name = "blake3_stream"
 path = "fuzz_targets/blake3_stream.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "poseidon"
+path = "fuzz_targets/poseidon.rs"
 test = false
 doc = false
 bench = false

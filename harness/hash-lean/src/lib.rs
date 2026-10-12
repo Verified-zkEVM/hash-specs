@@ -38,6 +38,7 @@ extern "C" {
     fn hs_blake2_stream(input: *mut lean_object) -> *mut lean_object;
     fn hs_blake3(input: *mut lean_object) -> *mut lean_object;
     fn hs_blake3_stream(input: *mut lean_object) -> *mut lean_object;
+    fn hs_poseidon_circom(input: *mut lean_object) -> *mut lean_object;
 }
 
 static INIT: Once = Once::new();
@@ -373,4 +374,13 @@ pub fn blake3_stream(mode: Blake3Mode, pieces: &[u16], m: &[u8], out_len: usize)
     }
     mode.encode(&mut input, out_len, m);
     call(hs_blake3_stream, &input, out_len)
+}
+
+/// circomlib's Poseidon over the BN254 scalar field, computed by the Lean fast specification on
+/// raw Montgomery limbs. The inputs and the output are 32-byte big-endian integers; the inputs
+/// are reduced modulo the field order. Returns `None` unless there are 1 to 16 inputs.
+pub fn poseidon_circom(inputs: &[[u8; 32]]) -> Option<[u8; 32]> {
+    let input: Vec<u8> = inputs.concat();
+    let out = call(hs_poseidon_circom, &input, 32);
+    out.try_into().ok()
 }

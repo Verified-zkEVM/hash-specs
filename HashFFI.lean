@@ -6,3 +6,4 @@ Authors: Derek Sorensen
 module
 
 public import HashFFI.Export
+public import HashFFI.Poseidon

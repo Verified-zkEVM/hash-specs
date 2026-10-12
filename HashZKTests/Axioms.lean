@@ -18,3 +18,7 @@ specifications. The build fails if any of them depends on an axiom other than `p
 
 -- Poseidon: circomlib's instances over CompPoly's BN254 compute the specification.
 audit_axioms HashZK.Poseidon.Circom.permutation_eq HashZK.Poseidon.Circom.poseidon_eq
+
+-- The raw limbs of the C exports preserve the operations, and compute circomlib's Poseidon.
+audit_axioms HashZK.Raw.BN254.hom_toRaw HashZK.Raw.BN254.toNat_toRaw
+  HashZK.Raw.Poseidon.poseidonNat_eq

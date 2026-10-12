@@ -4,7 +4,7 @@
 1. Layer 1 (`Hash/`, `HashTests/`) imports only Lean core, Mathlib and Mathlib's own
    dependencies, and other Layer 1 modules. It never imports CompPoly, Verso, or Layers 2 and 3.
 2. The C-export library (`HashFFI`) is Mathlib-free: none of its transitive imports inside this
-   repository import Mathlib, Batteries, Aesop, Qq, Plausible or `Hash.Init`. It is linked into the
+   repository or CompPoly import Mathlib, Batteries, Aesop, Qq, Plausible or `Hash.Init`. It is linked into the
    Rust harness as a static library, and must stay small.
 3. Layer 1 contains no `sorry`, `admit`, `native_decide` or `axiom` declarations.
 
@@ -31,9 +31,21 @@ def strip_comments(src: str) -> str:
     return re.sub(r"--[^\n]*", "", src)
 
 
+# Package sources whose modules the HashFFI closure may reach (CompPoly's zero-import runtime
+# definitions), searched after the repository.
+PACKAGE_ROOTS = [ROOT / ".lake" / "packages" / "CompPoly"]
+
+
 def module_file(mod: str) -> pathlib.Path | None:
-    path = ROOT / (mod.replace(".", "/") + ".lean")
-    return path if path.exists() else None
+    for base in [ROOT, *PACKAGE_ROOTS]:
+        path = base / (mod.replace(".", "/") + ".lean")
+        if path.exists():
+            return path
+    return None
+
+
+def rel(path: pathlib.Path) -> pathlib.Path:
+    return path.relative_to(ROOT)
 
 
 def imports(path: pathlib.Path) -> list[str]:
@@ -49,12 +61,12 @@ def main() -> int:
     layer1 = [p for d in LAYER1_DIRS for p in (ROOT / d).rglob("*.lean")] + [ROOT / "Hash.lean"]
 
     for path in layer1:
-        rel = path.relative_to(ROOT)
+        rp = rel(path)
         for mod in imports(path):
             if top(mod) in LAYER1_FORBIDDEN_LOCAL or not top(mod) in LAYER1_ALLOWED:
-                errors.append(f"{rel}: Layer 1 must not import {mod}")
+                errors.append(f"{rp}: Layer 1 must not import {mod}")
         for m in FORBIDDEN_TOKENS.finditer(strip_comments(path.read_text())):
-            errors.append(f"{rel}: forbidden in Layer 1: {m.group(0).strip()}")
+            errors.append(f"{rp}: forbidden in Layer 1: {m.group(0).strip()}")
 
     # Transitive closure of HashFFI inside the repository.
     seen: set[str] = set()
@@ -69,7 +81,7 @@ def main() -> int:
             continue
         for dep in imports(path):
             if top(dep) in MATHLIB_FAMILY or dep == "Hash.Init":
-                errors.append(f"{path.relative_to(ROOT)}: imported by HashFFI, must be Mathlib-free, imports {dep}")
+                errors.append(f"{rel(path)}: imported by HashFFI, must be Mathlib-free, imports {dep}")
             elif module_file(dep) is not None:
                 stack.append(dep)
 
