@@ -68,14 +68,15 @@ jobs:
         run: cargo install cargo-fuzz --locked
       - name: Fuzzing smoke run (60 s per target)
         working-directory: harness/fuzz
-        # -detect_leaks=0: one-time initialisation state is never freed, and LeakSanitizer reports
-        # it at exit (624 bytes in 74 objects after 856,924 runs, while libFuzzer's per-input leak
-        # check flagged no input). AddressSanitizer still catches memory errors.
+        # LeakSanitizer is off: one-time initialisation state is never freed, and LeakSanitizer
+        # reports it at exit (624 bytes in 74 objects, the same after 680,890 and 856,924 runs).
+        # AddressSanitizer still catches memory errors.
         env:
           HASH_LEAN_SKIP_LAKE: "1"
+          ASAN_OPTIONS: detect_leaks=0
         run: |
           for target in $(cargo +nightly fuzz list); do
-            cargo +nightly fuzz run "$target" -- -max_total_time=60 -max_len=4096 -detect_leaks=0
+            cargo +nightly fuzz run "$target" -- -max_total_time=60 -max_len=4096
           done
 
   # The Verso book.

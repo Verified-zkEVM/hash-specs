@@ -43,12 +43,13 @@ jobs:
       - run: cargo install cargo-fuzz --locked
       - name: Fuzz for 30 minutes
         working-directory: harness/fuzz
-        # -detect_leaks=0: one-time initialisation state is never freed, and LeakSanitizer reports
-        # it at exit (624 bytes in 74 objects after 856,924 runs, while libFuzzer's per-input leak
-        # check flagged no input). AddressSanitizer still catches memory errors.
+        # LeakSanitizer is off: one-time initialisation state is never freed, and LeakSanitizer
+        # reports it at exit (624 bytes in 74 objects, the same after 680,890 and 856,924 runs).
+        # AddressSanitizer still catches memory errors.
         env:
           HASH_LEAN_SKIP_LAKE: "1"
-        run: cargo +nightly fuzz run "${{ matrix.target }}" -- -max_total_time=1800 -max_len=65536 -detect_leaks=0
+          ASAN_OPTIONS: detect_leaks=0
+        run: cargo +nightly fuzz run "${{ matrix.target }}" -- -max_total_time=1800 -max_len=65536
       - name: Keep any crashing inputs
         if: failure()
         uses: actions/upload-artifact@v4
