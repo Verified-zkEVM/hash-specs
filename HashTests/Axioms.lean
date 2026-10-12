@@ -49,5 +49,9 @@ audit_axioms Hash.BLAKE2.blake2b_IV Hash.BLAKE2.blake2s_IV Hash.BLAKE2.SIGMA_per
 audit_axioms Hash.BLAKE2.Equiv.hashWith_eq Hash.BLAKE2.Equiv.F_eq Hash.BLAKE2.blake2bWith_eq
   Hash.BLAKE2.blake2sWith_eq Hash.BLAKE2.blake2b_eq Hash.BLAKE2.blake2s_eq Hash.BLAKE2.blake2bF_eq
 
+-- BLAKE3: streaming equals one-shot [BLAKE3, §5.1].
+audit_axioms Hash.BLAKE3.Fast.State.finalize_updates Hash.blake3Init_eq Hash.blake3KeyedInit_eq
+  Hash.blake3DeriveKeyInit_eq
+
 -- Constructions.
 audit_axioms Hash.MerkleDamgard.iterate_append Hash.Sponge.sponge_prefix Hash.Tree.finish_pushAll

@@ -15,6 +15,7 @@ public import Hash.BLAKE3.API
 public import Hash.BLAKE3.Fast
 public import Hash.BLAKE3.Reference
 public import Hash.BLAKE3.Stream
+public import Hash.BLAKE3.StreamLemmas
 public import Hash.Construction.MerkleDamgard
 public import Hash.Construction.Sponge
 public import Hash.Construction.SpongeLemmas
