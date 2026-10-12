@@ -8,6 +8,7 @@ module
 public import Hash.SHA2.API
 public import Hash.Keccak.API
 public import Hash.BLAKE2.API
+public import Hash.BLAKE3.API
 
 /-!
 # C entry points for the differential-testing harness
@@ -17,7 +18,7 @@ that the Rust harness in `harness/` can call the fast specifications in-process.
 must stay Mathlib-free: it is linked into the harness as a static library together with Lean's
 runtime, and importing Mathlib would make that library enormous.
 
-`hs_sha2_stream`, `hs_keccak_stream` and `hs_blake2_stream` expose the streaming interfaces for
+`hs_sha2_stream`, `hs_keccak_stream`, `hs_blake2_stream` and `hs_blake3_stream` expose the streaming interfaces for
 testing: it hashes a message in pieces of
 given sizes, so the harness can check that every way of splitting a message gives the same digest.
 
@@ -195,6 +196,53 @@ Returns the empty array on malformed input. -/
   match (input.get! 0).toNat with
   | 0 => blake2StreamPieces (Hash.blake2bInit key salt personal nn) sizes m
   | 1 => blake2StreamPieces (Hash.blake2sInit key salt personal nn) sizes m
+  | _ => ByteArray.empty
+
+/-- Split a BLAKE3 input: the mode (0 `hash`, 1 `keyed_hash`, 2 `derive_key`), the output
+length (four bytes, big-endian), the key or context length (two bytes, big-endian), the key
+(32 bytes) or context string, then the message. -/
+def blake3Input (input : ByteArray) : Nat × Nat × ByteArray × ByteArray :=
+  let mode := (input.get! 0).toNat
+  let d := (List.range 4).foldl (fun d i => 256 * d + (input.get! (1 + i)).toNat) 0
+  let kl := 256 * (input.get! 5).toNat + (input.get! 6).toNat
+  (mode, d, input.extract 7 (7 + kl), input.extract (7 + kl) input.size)
+
+/-- BLAKE3 in any mode with any output length, encoded as for `blake3Input`; the empty array
+for an unknown mode. -/
+@[export hs_blake3] def blake3 (input : ByteArray) : ByteArray :=
+  match blake3Input input with
+  | (0, d, _, m) => Hash.blake3Xof m d
+  | (1, d, key, m) => Hash.blake3Keyed key m d
+  | (2, d, context, m) => Hash.blake3DeriveKey context m d
+  | _ => ByteArray.empty
+
+/-- Add `m` to the BLAKE3 state `s` in pieces whose sizes cycle through `sizes`, then finalize
+with `d` bytes of output. -/
+def blake3StreamPieces (s : Hash.BLAKE3.Fast.State) (sizes : List Nat) (m : ByteArray)
+    (d : Nat) : ByteArray := Id.run do
+  let mut s := s
+  let mut off := 0
+  let mut i := 0
+  -- If every size were 0 the loop would never advance, so fall back to single bytes.
+  let sizes := if sizes.all (· == 0) then [1] else sizes
+  while off < m.size do
+    let n := sizes.getD (i % sizes.length) 1
+    s := s.update (m.extract off (off + n))
+    off := off + n
+    i := i + 1
+  return s.finalize d
+
+/-- The BLAKE3 streaming interface, for testing. The input is a count `k`, `k` big-endian 16-bit
+piece sizes, and then the input of `blake3`. Returns the empty array on malformed input. -/
+@[export hs_blake3_stream] def blake3Stream (input : ByteArray) : ByteArray :=
+  let k := (input.get! 0).toNat
+  if input.size < 8 + 2 * k then ByteArray.empty else
+  let sizes := (List.range k).map fun j =>
+    256 * (input.get! (1 + 2 * j)).toNat + (input.get! (2 + 2 * j)).toNat
+  match blake3Input (input.extract (1 + 2 * k) input.size) with
+  | (0, d, _, m) => blake3StreamPieces Hash.blake3Init sizes m d
+  | (1, d, key, m) => blake3StreamPieces (Hash.blake3KeyedInit key) sizes m d
+  | (2, d, context, m) => blake3StreamPieces (Hash.blake3DeriveKeyInit context) sizes m d
   | _ => ByteArray.empty
 
 end HashFFI

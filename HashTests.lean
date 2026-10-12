@@ -7,6 +7,7 @@ module
 
 import HashTests.SHA2
 import HashTests.BLAKE2
+import HashTests.BLAKE3
 import HashTests.Keccak
 import HashTests.Audit
 import HashTests.Axioms

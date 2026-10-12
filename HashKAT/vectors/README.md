@@ -111,3 +111,19 @@ from the source below; the SHA-256 of every file is listed so that the copies ca
 | File | SHA-256 |
 |---|---|
 | `vectors.txt` | `64455db2a5bb462e1005a7244500f3e620e6b82dfc9b9698e4a4148632cec564` |
+
+## `blake3/`: the BLAKE3 team's test vectors
+
+- **Source:** `test_vectors/test_vectors.json` of the reference repository
+  <https://github.com/BLAKE3-team/BLAKE3> at commit `f55849f89cd85083c1c9daa2c5de20766f309c00`
+  (downloaded 2026-10-12), copied unmodified.
+- **Licence:** CC0 1.0 Universal, or alternatively Apache 2.0 (the repository's `README.md`).
+- **Format:** a JSON object with the `key` used by `keyed_hash`, the `context_string` used by
+  `derive_key`, and 35 `cases`. Each case gives an input length (0 to 102400 bytes; the input is
+  the bytes `0, 1, …, 250` repeated) and 131 bytes of extended output for each of the three
+  modes. `hash-kat` checks all three modes, at the full 131 bytes and at the default 32 bytes,
+  one-shot and streamed.
+
+| File | SHA-256 |
+|---|---|
+| `test_vectors.json` | `dcb91ea8accc77e6d6e632af7cdc1a99a9f3ae78cf648da595c7d064db32f624` |

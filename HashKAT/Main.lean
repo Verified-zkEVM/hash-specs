@@ -9,6 +9,7 @@ public import HashKAT.Rsp
 public import Hash.SHA2.API
 public import Hash.Keccak.API
 public import Hash.BLAKE2.API
+public import Hash.BLAKE3.API
 public import HashKAT.Json
 public import HashFFI.Export
 
@@ -39,6 +40,8 @@ inductive Kind where
   | shakeMonte (f : ByteArray → Nat → ByteArray)
   /-- Records of `blake2-kat.json` for one function: `hash key message outputLength`. -/
   | blake2Json (name : String) (f : ByteArray → ByteArray → Nat → ByteArray)
+  /-- One mode of the BLAKE3 test vectors: `xof key context message outputLength`. -/
+  | blake3Json (mode : String) (f : ByteArray → ByteArray → ByteArray → Nat → ByteArray)
   /-- EIP-152 records for the BLAKE2b `F` precompile. -/
   | eip152 (f : ByteArray → Except String ByteArray)
 
@@ -121,6 +124,28 @@ def blake2Streamed {α : Type} [BLAKE2.Fast.Word α] (s : BLAKE2.Fast.State α) 
   | d :: ds => if ds.all (· == d) then d else ByteArray.empty
   | [] => ByteArray.empty
 
+/-- Hash `m` incrementally with the BLAKE3 state `s` under every pattern of `piecePatterns`,
+producing `d` bytes. The result is the common output if all patterns agree, and the empty array
+otherwise. -/
+def blake3Streamed (s : BLAKE3.Fast.State) (m : ByteArray) (d : Nat) : ByteArray :=
+  let outs := (piecePatterns ++ [[1024], [1023, 1025], [5000]]).map
+    (HashFFI.blake3StreamPieces s · m d)
+  match outs with
+  | o :: os => if os.all (· == o) then o else ByteArray.empty
+  | [] => ByteArray.empty
+
+/-- The three modes of the BLAKE3 test vectors, one-shot and streamed. -/
+def blake3Files : List TestFile :=
+  let file := "blake3/test_vectors.json"
+  [⟨file, id, .blake3Json "hash" fun _ _ m d => blake3Xof m d, false⟩,
+   ⟨file, id, .blake3Json "keyed_hash" fun key _ m d => blake3Keyed key m d, false⟩,
+   ⟨file, id, .blake3Json "derive_key" fun _ c m d => blake3DeriveKey c m d, false⟩,
+   ⟨file, id, .blake3Json "hash" fun _ _ m d => blake3Streamed blake3Init m d, true⟩,
+   ⟨file, id, .blake3Json "keyed_hash" fun key _ m d =>
+      blake3Streamed (blake3KeyedInit key) m d, true⟩,
+   ⟨file, id, .blake3Json "derive_key" fun _ c m d =>
+      blake3Streamed (blake3DeriveKeyInit c) m d, true⟩]
+
 /-- Every test file. -/
 def testFiles : List TestFile :=
   shavs "SHA224" sha224 ++ shavs "SHA256" sha256 ++ shavs "SHA384" sha384 ++
@@ -143,7 +168,8 @@ def testFiles : List TestFile :=
    ⟨"blake2/blake2-kat.json", id,
       .blake2Json "blake2s" fun key m nn => blake2Streamed (blake2sInit key .empty .empty nn) m,
       true⟩,
-   ⟨"eip-152/vectors.txt", id, .eip152 blake2bPrecompile, false⟩]
+   ⟨"eip-152/vectors.txt", id, .eip152 blake2bPrecompile, false⟩] ++
+  blake3Files
 
 public def main : IO UInt32 := do
   let mut total := 0
@@ -157,13 +183,15 @@ public def main : IO UInt32 := do
       | .xof xof => runXofFile xof contents
       | .shakeMonte xof => runShakeMonte xof contents
       | .blake2Json name f => runBlake2Json name f contents
+      | .blake3Json mode f => runBlake3Json mode f contents
       -- EIP-152 vector 8 (2³² − 1 rounds) is skipped: too slow for a specification.
       | .eip152 f => runEip152 f 1000000 contents
     total := total + outcome.passed + outcome.failures.length
     failed := failed + outcome.failures.length
     let status := if outcome.failures.isEmpty then "ok" else "FAILED"
     let mode := match f.kind with
-      | .blake2Json name _ => if f.streaming then s!" ({name}, streamed)" else s!" ({name})"
+      | .blake2Json name _ | .blake3Json name _ =>
+        if f.streaming then s!" ({name}, streamed)" else s!" ({name})"
       | _ => if f.streaming then " (streamed)" else ""
     IO.println s!"{status}  {f.path}{mode}: {outcome.passed} passed, {outcome.failures.length} failed"
     for e in outcome.failures.take 5 do

@@ -11,8 +11,8 @@ public import Lean.Data.Json
 /-!
 # JSON test vectors
 
-A runner for the BLAKE2 team's `blake2-kat.json`: a list of records with fields `hash`, `in`,
-`key` and `out` (hexadecimal strings).
+Runners for the BLAKE2 team's `blake2-kat.json` (a list of records with fields `hash`, `in`,
+`key` and `out`, as hexadecimal strings) and the BLAKE3 team's `test_vectors.json`.
 -/
 
 public section
@@ -40,6 +40,36 @@ def runBlake2Json (name : String) (hash : ByteArray → ByteArray → Nat → By
       if hash key m out.size == out then passed := passed + 1
       else failures := s!"record {i}" :: failures
     | _, _, _ => failures := s!"record {i}: bad fields" :: failures
+  return ⟨passed, failures.reverse⟩
+
+/-- The BLAKE3 test input of length `n`: the bytes `0, 1, …, 250` repeated. -/
+def blake3Input (n : Nat) : ByteArray := ⟨((List.range n).map fun i => (i % 251).toUInt8).toArray⟩
+
+/-- The bytes of an ASCII string. -/
+def asciiBytes (s : String) : ByteArray := ⟨(s.toList.map fun c => c.toNat.toUInt8).toArray⟩
+
+/-- Check one mode of `test_vectors.json` (`hash`, `keyed_hash` or `derive_key`), with
+`xof key context message outputLength` given the file's key and context string. Each case is
+checked at the full output length and at 32 bytes. -/
+def runBlake3Json (mode : String)
+    (xof : ByteArray → ByteArray → ByteArray → Nat → ByteArray) (contents : String) :
+    Outcome := Id.run do
+  let .ok json := Json.parse contents | return ⟨0, ["bad JSON"]⟩
+  let .ok key := json.getObjValAs? String "key" | return ⟨0, ["missing key"]⟩
+  let .ok context := json.getObjValAs? String "context_string" |
+    return ⟨0, ["missing context string"]⟩
+  let .ok cases := (json.getObjVal? "cases").bind Json.getArr? |
+    return ⟨0, ["missing cases"]⟩
+  let mut passed := 0
+  let mut failures : List String := []
+  for c in cases do
+    match (c.getObjValAs? Nat "input_len").toOption,
+        ((c.getObjValAs? String mode).toOption).bind ByteArray.ofHex? with
+    | some n, some out =>
+      let f := xof (asciiBytes key) (asciiBytes context) (blake3Input n)
+      if f out.size == out && f 32 == out.extract 0 32 then passed := passed + 1
+      else failures := s!"input length {n}" :: failures
+    | _, _ => failures := "bad case" :: failures
   return ⟨passed, failures.reverse⟩
 
 end HashKAT
