@@ -45,5 +45,9 @@ audit_axioms Hash.Keccak.keccakPState_bijective Hash.Keccak.keccakP_injective
 -- BLAKE2 IVs are the SHA-2 initial values [RFC 7693, §2.6].
 audit_axioms Hash.BLAKE2.blake2b_IV Hash.BLAKE2.blake2s_IV
 
+-- BLAKE2: the fast specification equals the reference [RFC 7693; EIP-152].
+audit_axioms Hash.BLAKE2.Equiv.hashWith_eq Hash.BLAKE2.Equiv.F_eq Hash.BLAKE2.blake2bWith_eq
+  Hash.BLAKE2.blake2sWith_eq Hash.BLAKE2.blake2b_eq Hash.BLAKE2.blake2s_eq Hash.BLAKE2.blake2bF_eq
+
 -- Constructions.
 audit_axioms Hash.MerkleDamgard.iterate_append Hash.Sponge.sponge_prefix

@@ -10,9 +10,9 @@ public import Hash.Prelude.BytesLemmas
 /-!
 # Lemmas about little-endian bits and bytes
 
-Facts about `natToBitsLE`, `bytesToBitsLSB` and little-endian loads and stores of `UInt64` words,
-used to relate the bit-string reference specification of Keccak to its lane-based fast
-specification.
+Facts about `natToBitsLE`, `bitsToNatLE`, `bytesToBitsLSB` and little-endian loads and stores of
+`UInt32` and `UInt64` words, used to relate the reference specifications of Keccak and BLAKE2 to
+their word-based fast specifications.
 -/
 
 public section
@@ -224,5 +224,122 @@ theorem ByteArray.testBit_getUInt64LE (a : ByteArray) (i z : Nat) (hz : z < 64) 
     simp (disch := omega) only [hhi, decide_eq_true, decide_eq_false, Bool.and_false,
       Bool.true_and, Bool.false_and, Bool.or_false, Bool.false_or, Nat.mul_zero, Nat.sub_zero,
       Nat.add_zero, Nat.reduceMul]
+
+/-! ### Little-endian loads and stores of `UInt32` and `UInt64`, as bytes -/
+
+theorem bitsToNatLE_append (a b : List Bool) :
+    bitsToNatLE (a ++ b) = bitsToNatLE a + 2 ^ a.length * bitsToNatLE b := by
+  induction a with
+  | nil => simp [bitsToNatLE]
+  | cons x a ih =>
+    simp only [bitsToNatLE, List.cons_append, List.foldr_cons] at ih ⊢
+    rw [ih, List.length_cons, Nat.pow_succ]
+    rw [Nat.mul_add, ← Nat.mul_assoc, Nat.mul_comm 2 (2 ^ a.length), Nat.add_assoc]
+
+theorem bitsToNatLE_natToBitsLE (w n : Nat) : bitsToNatLE (natToBitsLE w n) = n % 2 ^ w := by
+  induction w generalizing n with
+  | zero => simp [natToBitsLE, bitsToNatLE, Nat.mod_one]
+  | succ w ih =>
+    rw [show w + 1 = 1 + w by omega, natToBitsLE_add, bitsToNatLE_append, ih, length_natToBitsLE,
+      Nat.pow_add, Nat.mod_mul, Nat.shiftRight_eq_div_pow, Nat.pow_one]
+    simp only [natToBitsLE, bitsToNatLE, List.range_one, List.map_cons, List.map_nil,
+      List.foldr_cons, List.foldr_nil, Nat.mul_zero, Nat.add_zero]
+    rw [Nat.testBit_zero]
+    rcases Nat.mod_two_eq_zero_or_one n with h | h <;> simp [h]
+
+theorem bitsToNatLE_bytesToBitsLSB (b : UInt8) (bs : List UInt8) :
+    bitsToNatLE (bytesToBitsLSB (b :: bs)) = b.toNat + 256 * bitsToNatLE (bytesToBitsLSB bs) := by
+  rw [bytesToBitsLSB_cons, bitsToNatLE_append, byteToBitsLSB, bitsToNatLE_natToBitsLE,
+    length_natToBitsLE, Nat.mod_eq_of_lt b.toNat_lt]
+  rfl
+
+theorem ByteArray.toBitVec_getUInt32LE (a : ByteArray) (i : Nat) (h : i + 4 ≤ a.size) :
+    (ByteArray.getUInt32LE a i).toBitVec =
+      BitVec.ofNat 32 (bitsToNatLE (bytesToBitsLSB ((a.data.toList.drop i).take 4))) := by
+  rw [drop_take_four _ _ (by simpa using h)]
+  simp only [bitsToNatLE_bytesToBitsLSB, bytesToBitsLSB_nil]
+  apply BitVec.eq_of_toNat_eq
+  have hs : a.size = a.data.size := rfl
+  simp only [ByteArray.getUInt32LE, ByteArray.get!,
+    UInt32.toNat_toBitVec, UInt32.toNat_or, UInt32.toNat_shiftLeft, UInt8.toNat_toUInt32,
+    BitVec.toNat_ofNat, Array.getElem_toList,
+    getElem!_pos a.data i (by omega), getElem!_pos a.data (i + 1) (by omega),
+    getElem!_pos a.data (i + 2) (by omega), getElem!_pos a.data (i + 3) (by omega)]
+  have h0 := a.data[i].toNat_lt
+  have h1 := a.data[i + 1].toNat_lt
+  have h2 := a.data[i + 2].toNat_lt
+  have h3 := a.data[i + 3].toNat_lt
+  generalize a.data[i].toNat = b0, a.data[i + 1].toNat = b1, a.data[i + 2].toNat = b2,
+    a.data[i + 3].toNat = b3 at *
+  simp only [Nat.shiftLeft_eq, UInt32.reduceToNat, Nat.reduceMod, bitsToNatLE, List.foldr_nil]
+  rw [Nat.mod_eq_of_lt (a := b3 * 2 ^ 24) (by omega),
+    Nat.mod_eq_of_lt (a := b1 * 2 ^ 8) (by omega),
+    Nat.mod_eq_of_lt (a := b2 * 2 ^ 16) (by omega), Nat.or_comm b0,
+    or_mul_two_pow b1 b0 8 (by omega), Nat.or_comm (b1 * 2 ^ 8 + b0),
+    or_mul_two_pow b2 _ 16 (by omega), Nat.or_comm (b2 * 2 ^ 16 + _),
+    or_mul_two_pow b3 _ 24 (by omega)]
+  omega
+
+theorem ByteArray.data_pushUInt32LE (a : ByteArray) (x : UInt32) :
+    (ByteArray.pushUInt32LE a x).data.toList = a.data.toList ++
+      (List.range 4).map fun i => (x.toBitVec.toNat / 2 ^ (8 * i)).toUInt8 := by
+  simp only [ByteArray.pushUInt32LE, ByteArray.data_push, Array.toList_push, List.append_assoc]
+  simp only [List.range_succ, List.range_zero, List.map_cons, List.map_nil, List.nil_append,
+    List.cons_append]
+  simp only [List.append_cancel_left_eq, List.cons.injEq, and_true]
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> rw [← UInt8.toNat_inj] <;>
+    simp [UInt32.toNat_shiftRight, Nat.shiftRight_eq_div_pow]
+
+theorem ByteArray.toBitVec_getUInt64LE (a : ByteArray) (i : Nat) (h : i + 8 ≤ a.size) :
+    (ByteArray.getUInt64LE a i).toBitVec =
+      BitVec.ofNat 64 (bitsToNatLE (bytesToBitsLSB ((a.data.toList.drop i).take 8))) := by
+  rw [drop_take_eight _ _ (by simpa using h)]
+  simp only [bitsToNatLE_bytesToBitsLSB, bytesToBitsLSB_nil]
+  apply BitVec.eq_of_toNat_eq
+  have hs : a.size = a.data.size := rfl
+  simp only [ByteArray.getUInt64LE, ByteArray.get!,
+    UInt64.toNat_toBitVec, UInt64.toNat_or, UInt64.toNat_shiftLeft, UInt8.toNat_toUInt64,
+    BitVec.toNat_ofNat, Array.getElem_toList,
+    getElem!_pos a.data i (by omega), getElem!_pos a.data (i + 1) (by omega),
+    getElem!_pos a.data (i + 2) (by omega), getElem!_pos a.data (i + 3) (by omega),
+    getElem!_pos a.data (i + 4) (by omega), getElem!_pos a.data (i + 5) (by omega),
+    getElem!_pos a.data (i + 6) (by omega), getElem!_pos a.data (i + 7) (by omega)]
+  have h0 := a.data[i].toNat_lt
+  have h1 := a.data[i + 1].toNat_lt
+  have h2 := a.data[i + 2].toNat_lt
+  have h3 := a.data[i + 3].toNat_lt
+  have h4 := a.data[i + 4].toNat_lt
+  have h5 := a.data[i + 5].toNat_lt
+  have h6 := a.data[i + 6].toNat_lt
+  have h7 := a.data[i + 7].toNat_lt
+  generalize a.data[i].toNat = b0, a.data[i + 1].toNat = b1, a.data[i + 2].toNat = b2,
+    a.data[i + 3].toNat = b3, a.data[i + 4].toNat = b4, a.data[i + 5].toNat = b5,
+    a.data[i + 6].toNat = b6, a.data[i + 7].toNat = b7 at *
+  simp only [Nat.shiftLeft_eq, UInt64.reduceToNat, Nat.reduceMod, bitsToNatLE, List.foldr_nil]
+  rw [Nat.mod_eq_of_lt (a := b1 * 2 ^ 8) (by omega),
+    Nat.mod_eq_of_lt (a := b2 * 2 ^ 16) (by omega),
+    Nat.mod_eq_of_lt (a := b3 * 2 ^ 24) (by omega),
+    Nat.mod_eq_of_lt (a := b4 * 2 ^ 32) (by omega),
+    Nat.mod_eq_of_lt (a := b5 * 2 ^ 40) (by omega),
+    Nat.mod_eq_of_lt (a := b6 * 2 ^ 48) (by omega),
+    Nat.mod_eq_of_lt (a := b7 * 2 ^ 56) (by omega), Nat.or_comm b0,
+    or_mul_two_pow b1 b0 8 (by omega), Nat.or_comm (b1 * 2 ^ 8 + b0),
+    or_mul_two_pow b2 _ 16 (by omega), Nat.or_comm (b2 * 2 ^ 16 + _),
+    or_mul_two_pow b3 _ 24 (by omega), Nat.or_comm (b3 * 2 ^ 24 + _),
+    or_mul_two_pow b4 _ 32 (by omega), Nat.or_comm (b4 * 2 ^ 32 + _),
+    or_mul_two_pow b5 _ 40 (by omega), Nat.or_comm (b5 * 2 ^ 40 + _),
+    or_mul_two_pow b6 _ 48 (by omega), Nat.or_comm (b6 * 2 ^ 48 + _),
+    or_mul_two_pow b7 _ 56 (by omega)]
+  omega
+
+theorem ByteArray.data_pushUInt64LE (a : ByteArray) (x : UInt64) :
+    (ByteArray.pushUInt64LE a x).data.toList = a.data.toList ++
+      (List.range 8).map fun i => (x.toBitVec.toNat / 2 ^ (8 * i)).toUInt8 := by
+  simp only [ByteArray.pushUInt64LE, ByteArray.data_push, Array.toList_push, List.append_assoc]
+  simp only [List.range_succ, List.range_zero, List.map_cons, List.map_nil, List.nil_append,
+    List.cons_append]
+  simp only [List.append_cancel_left_eq, List.cons.injEq, and_true]
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [← UInt8.toNat_inj] <;>
+    simp [UInt64.toNat_shiftRight, Nat.shiftRight_eq_div_pow]
 
 end Hash

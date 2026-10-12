@@ -111,8 +111,17 @@ variable {α : Type} [Word α]
 def paramBlock (P : Params) (nn kk : Nat) (salt personal : ByteArray) : ByteArray :=
   ⟨(Reference.paramBlock P nn kk salt.data.toList personal.data.toList).toArray⟩
 
-/-- BLAKE2 with words of type `α`: as in the reference, on a single zero-padded copy of the key
-block and the message. -/
+/-- The data blocks as one byte array, as in the reference: the key block, if any, then the
+message zero-padded to whole blocks; one zero block for an empty message without key. -/
+def pad (P : Params) (key msg : ByteArray) : ByteArray :=
+  let bb := P.blockBytes
+  let kk := key.size
+  let ll := msg.size
+  let keyBlock := if kk = 0 then ByteArray.empty else key ++ ByteArray.zeros (bb - kk)
+  let p := keyBlock ++ msg ++ ByteArray.zeros ((bb - ll % bb) % bb)
+  if p.size = 0 then ByteArray.zeros bb else p
+
+/-- BLAKE2 with words of type `α`, as in the reference. -/
 @[specialize] def hashWith (α : Type) [Word α] (P : Params) (key salt personal : ByteArray)
     (nn : Nat) (msg : ByteArray) : ByteArray :=
   let bb := P.blockBytes
@@ -121,9 +130,7 @@ block and the message. -/
   let pb := paramBlock P nn kk salt personal
   let h : Array α := ((List.range 8).map fun i =>
     xor (ofNat (P.IV.getD i 0)) (loadLE pb (i * (P.w / 8)))).toArray
-  let keyBlock := if kk = 0 then ByteArray.empty else key ++ ByteArray.zeros (bb - kk)
-  let p := keyBlock ++ msg ++ ByteArray.zeros ((bb - ll % bb) % bb)
-  let p := if p.size = 0 then ByteArray.zeros bb else p
+  let p := pad P key msg
   let dd := p.size / bb
   let h := (List.range (dd - 1)).foldl
     (fun h i => F P P.rounds h (block P p (i * bb)) ((i + 1) * bb) false) h

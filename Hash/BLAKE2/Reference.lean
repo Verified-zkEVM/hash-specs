@@ -122,21 +122,28 @@ def paramBlock (nn kk : Nat) (salt personal : List UInt8) : List UInt8 :=
     (salt ++ List.replicate (P.saltBytes - salt.length) 0).take P.saltBytes ++
     (personal ++ List.replicate (P.saltBytes - personal.length) 0).take P.saltBytes
 
+/-- The data blocks `d[0..dd-1]` [RFC 7693, §3.3]: the key, if any, padded to a full block,
+then the message zero-padded to whole blocks; one zero block for an empty message without key. -/
+def blocks (key msg : List UInt8) : List (List UInt8) :=
+  let bb := P.blockBytes
+  let kk := key.length
+  let ll := msg.length
+  let keyBlock := if kk = 0 then [] else [key ++ List.replicate (bb - kk) 0]
+  let msgBlocks := chunks bb (msg ++ List.replicate ((bb - ll % bb) % bb) 0)
+  let d := keyBlock ++ msgBlocks
+  if d = [] then [List.replicate bb 0] else d
+
 /-- BLAKE2 with an `nn`-byte output, a key of at most `bb/2` bytes, and optional salt and
-personalisation [RFC 7693, §3.3; BLAKE2, §2.5]. The key, if any, is padded to a full block and
-processed first; the message is zero-padded to whole blocks, with one zero block for an empty
-message without key. The offset counter `t` counts the bytes processed, and the last block is
-compressed with the final flag set. -/
+personalisation [RFC 7693, §3.3; BLAKE2, §2.5]. The data blocks are compressed in order; the
+offset counter `t` counts the bytes processed, and the last block is compressed with the final
+flag set. -/
 def hash (key salt personal : List UInt8) (nn : Nat) (msg : List UInt8) : List UInt8 :=
   let bb := P.blockBytes
   let kk := key.length
   let ll := msg.length
   let h := List.zipWith (· ^^^ ·) (P.IV.map (BitVec.ofNat P.w))
     (wordsLE P (paramBlock P nn kk salt personal))
-  let keyBlock := if kk = 0 then [] else [key ++ List.replicate (bb - kk) 0]
-  let msgBlocks := chunks bb (msg ++ List.replicate ((bb - ll % bb) % bb) 0)
-  let d := keyBlock ++ msgBlocks
-  let d := if d = [] then [List.replicate bb 0] else d
+  let d := blocks P key msg
   let dd := d.length
   let h := (List.range (dd - 1)).foldl
     (fun h i => F P P.rounds h (wordsLE P (d.getD i [])) ((i + 1) * bb) false) h
