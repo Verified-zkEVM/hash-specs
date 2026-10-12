@@ -58,5 +58,21 @@ fn keccak(c: &mut Criterion) {
     ]);
 }
 
-criterion_group!(benches, sha2, keccak);
+fn blake2(c: &mut Criterion) {
+    use blake2::Digest as _;
+    let b = hash_lean::Blake2Params { out_len: 64, key: &[], salt: &[], personal: &[] };
+    let s = hash_lean::Blake2Params { out_len: 32, ..b };
+    bench_hash(c, "BLAKE2b-512", &[
+        ("lean", &|m| hash_lean::blake2b(&b, m)),
+        ("blake2b_simd", &|m| blake2b_simd::blake2b(m).as_bytes().to_vec()),
+        ("rustcrypto", &|m| blake2::Blake2b512::digest(m).to_vec()),
+    ]);
+    bench_hash(c, "BLAKE2s-256", &[
+        ("lean", &|m| hash_lean::blake2s(&s, m)),
+        ("blake2s_simd", &|m| blake2s_simd::blake2s(m).as_bytes().to_vec()),
+        ("rustcrypto", &|m| blake2::Blake2s256::digest(m).to_vec()),
+    ]);
+}
+
+criterion_group!(benches, sha2, keccak, blake2);
 criterion_main!(benches);

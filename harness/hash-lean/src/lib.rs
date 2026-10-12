@@ -32,6 +32,10 @@ extern "C" {
     fn hs_shake128(input: *mut lean_object) -> *mut lean_object;
     fn hs_shake256(input: *mut lean_object) -> *mut lean_object;
     fn hs_keccak_stream(input: *mut lean_object) -> *mut lean_object;
+    fn hs_blake2b(input: *mut lean_object) -> *mut lean_object;
+    fn hs_blake2s(input: *mut lean_object) -> *mut lean_object;
+    fn hs_blake2b_f(input: *mut lean_object) -> *mut lean_object;
+    fn hs_blake2_stream(input: *mut lean_object) -> *mut lean_object;
 }
 
 static INIT: Once = Once::new();
@@ -245,4 +249,79 @@ pub fn keccak_stream(variant: KeccakVariant, pieces: &[u16], m: &[u8], xof_len: 
     input.extend_from_slice(&xof_len.to_be_bytes());
     input.extend_from_slice(m);
     call(hs_keccak_stream, &input, variant.output_len(xof_len))
+}
+
+/// The parameters of a BLAKE2 computation: the output length in bytes, and the key, salt and
+/// personalisation (each possibly empty).
+#[derive(Clone, Copy, Debug)]
+pub struct Blake2Params<'a> {
+    pub out_len: u8,
+    pub key: &'a [u8],
+    pub salt: &'a [u8],
+    pub personal: &'a [u8],
+}
+
+impl Blake2Params<'_> {
+    fn encode(&self, input: &mut Vec<u8>, m: &[u8]) {
+        let len = |b: &[u8]| u8::try_from(b.len()).expect("parameter fits in 255 bytes");
+        input.extend_from_slice(&[
+            self.out_len,
+            len(self.key),
+            len(self.salt),
+            len(self.personal),
+        ]);
+        input.extend_from_slice(self.key);
+        input.extend_from_slice(self.salt);
+        input.extend_from_slice(self.personal);
+        input.extend_from_slice(m);
+    }
+}
+
+fn blake2(f: LeanFn, params: &Blake2Params, m: &[u8]) -> Vec<u8> {
+    let mut input = Vec::with_capacity(4 + m.len() + 64);
+    params.encode(&mut input, m);
+    call(f, &input, params.out_len as usize)
+}
+
+/// BLAKE2b with the given parameters, computed by the Lean fast specification.
+pub fn blake2b(params: &Blake2Params, m: &[u8]) -> Vec<u8> {
+    blake2(hs_blake2b, params, m)
+}
+
+/// BLAKE2s with the given parameters, computed by the Lean fast specification.
+pub fn blake2s(params: &Blake2Params, m: &[u8]) -> Vec<u8> {
+    blake2(hs_blake2s, params, m)
+}
+
+/// The EIP-152 BLAKE2b `F` precompile on a raw input, computed by the Lean fast specification:
+/// `None` if the input is invalid.
+pub fn blake2b_f(input: &[u8]) -> Option<Vec<u8>> {
+    let out = call(hs_blake2b_f, input, 64);
+    (!out.is_empty()).then_some(out)
+}
+
+/// A BLAKE2 variant, for the streaming interface.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Blake2Variant {
+    Blake2b = 0,
+    Blake2s = 1,
+}
+
+/// Hash `m` with the Lean BLAKE2 streaming interface, adding it in pieces whose sizes cycle
+/// through `pieces` (a size of 0 is an empty update; at most 255 sizes are used).
+pub fn blake2_stream(
+    variant: Blake2Variant,
+    params: &Blake2Params,
+    pieces: &[u16],
+    m: &[u8],
+) -> Vec<u8> {
+    let pieces = &pieces[..pieces.len().min(255)];
+    let mut input = Vec::with_capacity(6 + 2 * pieces.len() + m.len() + 64);
+    input.push(variant as u8);
+    input.push(pieces.len() as u8);
+    for p in pieces {
+        input.extend_from_slice(&p.to_be_bytes());
+    }
+    params.encode(&mut input, m);
+    call(hs_blake2_stream, &input, params.out_len as usize)
 }

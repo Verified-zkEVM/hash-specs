@@ -10,8 +10,11 @@ cargo-fuzz = true
 
 [dependencies]
 aws-lc-rs = "1"
+blake2b_simd = "1"
+blake2s_simd = "1"
 hash-lean = { path = "../hash-lean" }
 libfuzzer-sys = "0.4"
+revm-precompile = { version = "43.0.3", default-features = false }
 sha2 = "0.10"
 sha3 = "0.10"
 tiny-keccak = { version = "2", features = ["sha3", "keccak", "shake"] }
@@ -40,6 +43,27 @@ bench = false
 [[bin]]
 name = "keccak_stream"
 path = "fuzz_targets/keccak_stream.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "blake2"
+path = "fuzz_targets/blake2.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "blake2_stream"
+path = "fuzz_targets/blake2_stream.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "blake2b_f"
+path = "fuzz_targets/blake2b_f.rs"
 test = false
 doc = false
 bench = false
