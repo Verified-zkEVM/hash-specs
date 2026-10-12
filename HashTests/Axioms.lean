@@ -42,6 +42,11 @@ audit_axioms Hash.Keccak.Equiv.keccakP_toString Hash.Keccak.Equiv.sponge_eq
   Hash.Keccak.shake128_eq Hash.Keccak.shake256_eq Hash.Keccak.keccak256_eq
   Hash.Keccak.shake128_prefix Hash.Keccak.shake256_prefix
 
+-- Keccak: streaming equals one-shot.
+audit_axioms Hash.Keccak.Fast.State.squeezeBytes_updates Hash.Keccak.Fast.State.finalize_updates
+  Hash.sha3x224Init_eq Hash.sha3x256Init_eq Hash.sha3x384Init_eq Hash.sha3x512Init_eq
+  Hash.shake128Init_eq Hash.shake256Init_eq Hash.keccak256Init_eq
+
 -- Keccak-p is a permutation [FIPS 202, §3.3].
 audit_axioms Hash.Keccak.keccakPState_bijective Hash.Keccak.keccakP_injective
   Hash.Keccak.keccakP_surjective

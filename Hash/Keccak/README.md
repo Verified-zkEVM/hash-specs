@@ -198,6 +198,7 @@ In between are zero bytes. `Fast.pad` implements exactly this, and
 | `Stream.lean` | Incremental interface `Fast.State` (`init`, `update`, `finalize`, `squeezeBytes`). |
 | `API.lean` | Byte-level `Hash.sha3x224` … `Hash.keccak256`, and `…Init` streaming states. |
 | `Equiv.lean` | Fast = reference, step by step and for each API function. |
+| `StreamLemmas.lean` | Streaming = one-shot (`Fast.State.squeezeBytes_updates`, `Fast.State.finalize_updates`, and `Hash.sha3x224Init_eq` … `Hash.keccak256Init_eq`). |
 | `Bijective.lean` | Every Keccak-p[b, n_r] is a bijection. |
 | `Properties.lean` | Prefix consistency of KECCAK[c], SHAKE128 and SHAKE256 on bits. |
 
@@ -218,9 +219,11 @@ Main theorems (all names in namespace `Hash.Keccak` unless qualified):
 
 Scope and limits. The fast specification takes byte strings, so messages whose length is not a
 multiple of 8 bits are covered only by the reference. The equivalence is proved for the five
-rates 72, 104, 136, 144, 168 bytes (`Equiv.Rate`). The streaming interface is not proved equal to
-the one-shot functions; it is tested against them on the NIST CAVP vectors split at several
-points (`HashKAT/`) and by fuzzing (`harness/`).
+rates 72, 104, 136, 144, 168 bytes (`Equiv.Rate`). The streaming interface is proved equal to
+the one-shot functions for every positive rate (its invariant: the state has absorbed the first
+$c$ whole blocks of the message so far and buffers the rest, fewer than one block), and also
+tested against them on the NIST CAVP vectors split at several points (`HashKAT/`) and by fuzzing
+(`harness/`).
 
 ## References
 

@@ -376,7 +376,10 @@ The evidence that the Lean specification is the SHA-3 of FIPS 202, as of 2026-10
   * Further properties
   * Keccak-p\[b, n\_r\] is a bijection for every $`b` (`Hash.Keccak.keccakPState_bijective`,
     `Hash.Keccak.keccakP_injective`, `Hash.Keccak.keccakP_surjective`). SHAKE128 and SHAKE256
-    are prefix-consistent, on bits and on bytes.
+    are prefix-consistent, on bits and on bytes. Streaming equals one-shot for every way of
+    splitting the message and every output length
+    (`Hash.Keccak.Fast.State.squeezeBytes_updates`, and `Hash.sha3x256Init_eq` and so on for the
+    byte-level API).
 *
   * Known-answer tests
   * All 4642 NIST CAVP SHA3VS vectors (short and long messages, variable output and Monte

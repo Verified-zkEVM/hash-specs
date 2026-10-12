@@ -172,6 +172,7 @@ hash-specs/
 - The incremental (streaming) API equals the one-shot API.
 
 The last property caught a real bug in SymCrypt, so it gets a fast-layer streaming API and a proof.
+*As implemented:* streaming equals one-shot is proved for SHA-2, SHA-3/SHAKE/Keccak-256, BLAKE2 and BLAKE3, for every way of splitting the message (`StreamLemmas.lean` in each directory).
 
 ---
 

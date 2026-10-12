@@ -14,9 +14,10 @@ An incremental interface to the fast Keccak sponge: `State.init`, any number of 
 calls, then `State.finalize` (or `State.squeezeBytes` for an extendable-output function). Full
 blocks are absorbed as soon as they are available, and at most one partial block is buffered.
 
-Hashing a message in pieces gives the same output as hashing it at once. This is tested against
-the one-shot functions on every NIST CAVP message split at several points (`HashKAT`), and by
-fuzzing with random splits (`harness/`).
+Hashing a message in pieces gives the same output as hashing it at once, for every output
+length: `Hash.Keccak.Fast.State.squeezeBytes_updates` in `Hash.Keccak.StreamLemmas`. It is also
+tested against the one-shot functions on every NIST CAVP message split at several points
+(`HashKAT`), and by fuzzing with random splits (`harness/`).
 -/
 
 @[expose] public section

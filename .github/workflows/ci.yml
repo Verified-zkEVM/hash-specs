@@ -28,7 +28,13 @@ jobs:
       - name: Build Hash (warnings are errors)
         run: lake build --wfail Hash
       - name: Tests and axiom audit
-        run: lake build --wfail HashTests
+        # The kernel-checked examples need up to about 4 GB each, so build them one at a time to
+        # stay within the runner's memory.
+        run: |
+          for m in HashTests.SHA2 HashTests.Keccak HashTests.BLAKE2 HashTests.BLAKE3; do
+            lake build --wfail "$m"
+          done
+          lake build --wfail HashTests
       - name: Environment linters
         run: lake lint
       - name: Build the other Lean libraries
