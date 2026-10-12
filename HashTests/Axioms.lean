@@ -85,3 +85,5 @@ audit_axioms Hash.ZK.sbox_sbox_invExponent Hash.ZK.sbox_invExponent_sbox Hash.ZK
 audit_axioms Hash.ZK.Poseidon2.Fast.externalM4_eq Hash.ZK.Poseidon2.Fast.permutation_eq
   Hash.ZK.Poseidon2.Fast.map_permutation Hash.ZK.Poseidon2.Plonky3.map_permutation_fastParams
   Hash.ZK.Poseidon2.map_permutation_hlBn254FastParams
+audit_axioms Hash.FieldSponge.absorb_append Hash.FieldSponge.map_paddingFree
+  Hash.FieldSponge.map_truncatedPermutation Hash.FieldSponge.map_onList

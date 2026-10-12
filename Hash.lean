@@ -19,6 +19,8 @@ public import Hash.BLAKE3.Fast
 public import Hash.BLAKE3.Reference
 public import Hash.BLAKE3.Stream
 public import Hash.BLAKE3.StreamLemmas
+public import Hash.Construction.FieldSponge
+public import Hash.Construction.FieldSpongeLemmas
 public import Hash.Construction.MerkleDamgard
 public import Hash.Construction.Sponge
 public import Hash.Construction.SpongeLemmas
@@ -64,3 +66,4 @@ public import Hash.ZK.Poseidon2.Fast
 public import Hash.ZK.Poseidon2.InstanceParams
 public import Hash.ZK.Poseidon2.Instances
 public import Hash.ZK.Poseidon2.Reference
+public import Hash.ZK.Poseidon2.Sponge

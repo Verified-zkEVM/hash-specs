@@ -29,3 +29,7 @@ audit_axioms HashZK.Poseidon2.babyBear16_eq HashZK.Poseidon2.babyBear24_eq
 audit_axioms HashZK.Raw.ModP.hom_toZMod HashZK.Raw.Poseidon2.babyBear16_eq
   HashZK.Raw.Poseidon2.babyBear24_eq HashZK.Raw.Poseidon2.koalaBear16_eq
   HashZK.Raw.Poseidon2.koalaBear24_eq HashZK.Raw.Poseidon2.hlBn254_eq
+audit_axioms HashZK.Raw.Poseidon2.babyBear16_sponge_eq HashZK.Raw.Poseidon2.babyBear24_sponge_eq
+  HashZK.Raw.Poseidon2.koalaBear16_sponge_eq HashZK.Raw.Poseidon2.koalaBear24_sponge_eq
+  HashZK.Raw.Poseidon2.babyBear16_compress_eq HashZK.Raw.Poseidon2.babyBear24_compress_eq
+  HashZK.Raw.Poseidon2.koalaBear16_compress_eq HashZK.Raw.Poseidon2.koalaBear24_compress_eq

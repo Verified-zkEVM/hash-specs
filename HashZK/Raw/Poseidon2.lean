@@ -5,6 +5,7 @@ Authors: Derek Sorensen
 -/
 module
 
+public import Hash.Construction.FieldSponge
 public import Hash.ZK.Poseidon2.InstanceParams
 public import HashZK.Raw.BN254
 public import HashZK.Raw.ModP
@@ -64,5 +65,16 @@ def koalaBear24 (xs : Vector Nat 24) : Vector Nat 24 := onModP paramsKB24.get xs
 /-- HorizenLabs' BN254 Poseidon2 of width 3. -/
 def hlBn254 (xs : Vector Nat 3) : Vector Nat 3 :=
   (Fast.permutation paramsBn254.get (xs.map BN254.ofNat)).map BN254.toNat
+
+/-- Plonky3's padding-free sponge over a permutation of width `t` on natural numbers. -/
+def sponge {t : Nat} (perm : Vector Nat t → Vector Nat t) (rate out : Nat) (xs : List Nat) :
+    List Nat :=
+  Hash.FieldSponge.paddingFree (Hash.FieldSponge.onList perm) t rate out xs
+
+/-- Plonky3's truncated-permutation compression over a permutation of width `t` on natural
+numbers. -/
+def compress {t : Nat} (perm : Vector Nat t → Vector Nat t) (chunk : Nat)
+    (inputs : List (List Nat)) : List Nat :=
+  Hash.FieldSponge.truncatedPermutation (Hash.FieldSponge.onList perm) t chunk inputs
 
 end HashZK.Raw.Poseidon2

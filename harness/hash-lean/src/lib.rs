@@ -40,6 +40,8 @@ extern "C" {
     fn hs_blake3_stream(input: *mut lean_object) -> *mut lean_object;
     fn hs_poseidon_circom(input: *mut lean_object) -> *mut lean_object;
     fn hs_poseidon2(input: *mut lean_object) -> *mut lean_object;
+    fn hs_poseidon2_sponge(input: *mut lean_object) -> *mut lean_object;
+    fn hs_poseidon2_compress(input: *mut lean_object) -> *mut lean_object;
 }
 
 static INIT: Once = Once::new();
@@ -416,4 +418,37 @@ pub fn poseidon2(instance: Poseidon2Instance, state: &[u8]) -> Option<Vec<u8>> {
     input.extend_from_slice(state);
     let out = call(hs_poseidon2, &input, t * k);
     (out.len() == t * k).then_some(out)
+}
+
+fn words_to_bytes(xs: &[u32]) -> Vec<u8> {
+    xs.iter().flat_map(|x| x.to_be_bytes()).collect()
+}
+
+fn bytes_to_words(bs: &[u8]) -> Vec<u32> {
+    bs.as_chunks::<4>().0.iter().map(|c| u32::from_be_bytes(*c)).collect()
+}
+
+/// Plonky3's padding-free sponge over a 31-bit Poseidon2 instance, computed by the Lean fast
+/// specification. Returns `None` for the BN254 instance or parameters outside Plonky3's bounds
+/// (`0 < rate < width`, `0 < out <= rate`).
+pub fn poseidon2_sponge(
+    instance: Poseidon2Instance,
+    rate: u8,
+    out: u8,
+    xs: &[u32],
+) -> Option<Vec<u32>> {
+    let mut input = vec![instance as u8, rate, out];
+    input.extend(words_to_bytes(xs));
+    let res = call(hs_poseidon2_sponge, &input, 4 * out as usize);
+    (!res.is_empty()).then(|| bytes_to_words(&res))
+}
+
+/// Plonky3's truncated-permutation compression over a 31-bit Poseidon2 instance, computed by the
+/// Lean fast specification: the chunks of `chunk` elements in `xs` are placed at the start of
+/// the zero state, and the first `chunk` elements of its permutation are returned.
+pub fn poseidon2_compress(instance: Poseidon2Instance, chunk: u8, xs: &[u32]) -> Option<Vec<u32>> {
+    let mut input = vec![instance as u8, chunk];
+    input.extend(words_to_bytes(xs));
+    let res = call(hs_poseidon2_compress, &input, 4 * chunk as usize);
+    (!res.is_empty()).then(|| bytes_to_words(&res))
 }

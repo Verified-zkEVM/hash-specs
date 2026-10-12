@@ -207,3 +207,112 @@ proptest! {
         check_bn254(&s);
     }
 }
+
+/// Plonky3's sponge and compression, for the configurations of its Merkle trees.
+macro_rules! plonky3_sponge {
+    ($name:ident, $field:ty, $p:expr, $width:literal, $rate:literal, $perm:path) => {
+        fn $name(xs: &[u32]) -> (Vec<u32>, Vec<u32>) {
+            use p3_symmetric::{
+                CryptographicHasher, PaddingFreeSponge, PseudoCompressionFunction,
+                TruncatedPermutation,
+            };
+            let fs: Vec<$field> = xs.iter().map(|&x| <$field>::new(x % $p)).collect();
+            let sponge = PaddingFreeSponge::<_, $width, $rate, 8>::new($perm());
+            let digest: [$field; 8] = sponge.hash_iter(fs.iter().copied());
+            let compress = TruncatedPermutation::<_, 2, 8, $width>::new($perm());
+            let pair: [[$field; 8]; 2] = [
+                core::array::from_fn(|i| fs.get(i).copied().unwrap_or_default()),
+                core::array::from_fn(|i| fs.get(8 + i).copied().unwrap_or_default()),
+            ];
+            let c = compress.compress(pair);
+            (
+                digest.iter().map(|x| x.as_canonical_u32()).collect(),
+                c.iter().map(|x| x.as_canonical_u32()).collect(),
+            )
+        }
+    };
+}
+
+plonky3_sponge!(
+    sponge_bb16,
+    p3_baby_bear::BabyBear,
+    BABY_BEAR,
+    16,
+    8,
+    p3_baby_bear::default_babybear_poseidon2_16
+);
+plonky3_sponge!(
+    sponge_bb24,
+    p3_baby_bear::BabyBear,
+    BABY_BEAR,
+    24,
+    16,
+    p3_baby_bear::default_babybear_poseidon2_24
+);
+plonky3_sponge!(
+    sponge_kb16,
+    p3_koala_bear::KoalaBear,
+    KOALA_BEAR,
+    16,
+    8,
+    p3_koala_bear::default_koalabear_poseidon2_16
+);
+plonky3_sponge!(
+    sponge_kb24,
+    p3_koala_bear::KoalaBear,
+    KOALA_BEAR,
+    24,
+    16,
+    p3_koala_bear::default_koalabear_poseidon2_24
+);
+
+fn check_sponge(instance: Poseidon2Instance, xs: &[u32]) {
+    let (rate, (digest, compressed)) = match instance {
+        Poseidon2Instance::BabyBear16 => (8, sponge_bb16(xs)),
+        Poseidon2Instance::BabyBear24 => (16, sponge_bb24(xs)),
+        Poseidon2Instance::KoalaBear16 => (8, sponge_kb16(xs)),
+        Poseidon2Instance::KoalaBear24 => (16, sponge_kb24(xs)),
+        Poseidon2Instance::HorizenLabsBn254 => unreachable!(),
+    };
+    let got = hash_lean::poseidon2_sponge(instance, rate, 8, xs).expect("parameters");
+    assert_eq!(got, digest, "{instance:?} sponge, {} elements", xs.len());
+    let mut pair: Vec<u32> = xs.iter().take(16).copied().collect();
+    pair.resize(16, 0);
+    let got = hash_lean::poseidon2_compress(instance, 8, &pair).expect("parameters");
+    assert_eq!(got, compressed, "{instance:?} compression");
+}
+
+const SPONGE_INSTANCES: [Poseidon2Instance; 4] = [
+    Poseidon2Instance::BabyBear16,
+    Poseidon2Instance::BabyBear24,
+    Poseidon2Instance::KoalaBear16,
+    Poseidon2Instance::KoalaBear24,
+];
+
+#[test]
+fn sponge_every_length() {
+    // Every input length up to three blocks of the wider rate, around every block boundary.
+    for instance in SPONGE_INSTANCES {
+        for n in 0..=50u32 {
+            let xs: Vec<u32> = (0..n).map(|i| i.wrapping_mul(0x9e37_79b9)).collect();
+            check_sponge(instance, &xs);
+        }
+    }
+}
+
+#[test]
+fn sponge_bad_parameters() {
+    let i = Poseidon2Instance::BabyBear16;
+    assert_eq!(hash_lean::poseidon2_sponge(i, 0, 1, &[1]), None);
+    assert_eq!(hash_lean::poseidon2_sponge(i, 16, 8, &[1]), None);
+    assert_eq!(hash_lean::poseidon2_sponge(i, 8, 9, &[1]), None);
+    assert_eq!(hash_lean::poseidon2_compress(i, 8, &[0; 24]), None);
+    assert_eq!(hash_lean::poseidon2_compress(Poseidon2Instance::HorizenLabsBn254, 1, &[0]), None);
+}
+
+proptest! {
+    #[test]
+    fn random_sponge(i in 0usize..4, xs in prop::collection::vec(any::<u32>(), 0..80)) {
+        check_sponge(SPONGE_INSTANCES[i], &xs);
+    }
+}
