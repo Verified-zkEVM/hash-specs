@@ -24,6 +24,10 @@ audit_axioms Hash.SHA2.K256_eq Hash.SHA2.K512_eq Hash.SHA2.initialHash256_eq
 audit_axioms Hash.SHA2.Equiv.hashWith_eq Hash.SHA2.sha224_eq Hash.SHA2.sha256_eq
   Hash.SHA2.sha384_eq Hash.SHA2.sha512_eq Hash.SHA2.sha512t224_eq Hash.SHA2.sha512t256_eq
 
+-- SHA-2: streaming equals one-shot.
+audit_axioms Hash.SHA2.Fast.State.finalize_updates Hash.sha224Init_eq Hash.sha256Init_eq
+  Hash.sha384Init_eq Hash.sha512Init_eq Hash.sha512t224Init_eq Hash.sha512t256Init_eq
+
 -- Keccak constants [FIPS 202, §3.2.2, §3.2.5].
 audit_axioms Hash.Keccak.rhoOffsets_eq Hash.Keccak.roundConstants_eq
 

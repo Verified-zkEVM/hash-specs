@@ -14,9 +14,10 @@ An incremental interface to the fast specification: `State.init`, then any numbe
 `State.update` calls, then `State.finalize`. Full blocks are compressed as soon as they are
 available, and at most one partial block is buffered.
 
-Hashing a message in pieces gives the same digest as hashing it at once. This is tested against
-the one-shot function on every NIST CAVP message split at several points (`HashKAT`), and by
-fuzzing with random splits (`harness/`).
+Hashing a message in pieces gives the same digest as hashing it at once:
+`Hash.SHA2.Fast.State.finalize_updates` in `Hash.SHA2.StreamLemmas`. It is also tested against the
+one-shot function on every NIST CAVP message split at several points (`HashKAT`), and by fuzzing
+with random splits (`harness/`).
 -/
 
 @[expose] public section

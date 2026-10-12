@@ -188,6 +188,7 @@ This section summarises the cited literature; this directory proves no security 
 | `Stream.lean` | Incremental interface `Fast.State` with `init`, `update`, `finalize`; at most one partial block is buffered. |
 | `API.lean` | The byte-level functions `Hash.sha224` … `Hash.sha512t256` and initial streaming states `Hash.sha224Init` … `Hash.sha512t256Init`. |
 | `Equiv.lean` | `LawfulWord` (machine words that agree with `BitVec w`) and the proof that the fast specification equals the reference. |
+| `StreamLemmas.lean` | The proof that the streaming interface equals the one-shot function. |
 
 **Main theorems** (namespace `Hash.SHA2` unless stated):
 
@@ -199,13 +200,14 @@ This section summarises the cited literature; this directory proves no security 
 | `Equiv.hashWith_eq` | For any `LawfulWord` type, any `P` whose rotation and shift amounts are below $w$ (`Params.AmountsLt`) and whose `digestBits` is a multiple of 8, and any byte array `m`: the bits of `Fast.hashWith α P m` equal `Reference.hash P` applied to the bits of `m`. |
 | `sha224_eq`, `sha256_eq`, `sha384_eq`, `sha512_eq`, `sha512t224_eq`, `sha512t256_eq` | The same for each member's API function, e.g. `bytesToBitsMSB (Hash.sha256 m).data.toList = Reference.hash sha256 (bytesToBitsMSB m.data.toList)`. |
 | `Equiv.bytesToBitsMSB_pad`, `Equiv.schedule_eq`, `Equiv.round_eq`, `Equiv.compress_eq` | The component lemmas: padding, schedule, round and compression agree between the two specifications. |
+| `Fast.State.finalize_updates` | Feeding any list of pieces to the streaming interface, then `finalize`, gives `Fast.hashWith` of their concatenation; `Hash.sha224Init_eq` … `Hash.sha512t256Init_eq` state it for each member's API. Invariant: the state has compressed the first $c$ whole blocks of the message so far and buffers the rest, fewer than one block. |
 | `MerkleDamgard.iterate_append` | (namespace `Hash`) Iteration over `xs ++ ys` resumes from the chaining value after `xs`. |
 
 **Scope of the guarantees.**
 
 - The fast specification takes byte arrays, so messages whose length is not a multiple of 8 bits
   are covered only by the reference specification.
-- The streaming interface (`Stream.lean`) is not proved equal to the one-shot function. It is
+- The streaming interface (`Stream.lean`) is proved equal to the one-shot function, and also
   tested against it on the NIST CAVP message vectors split at several points (`HashKAT`) and by
   fuzzing with random splits (`harness/`).
 - The theorems above are audited in `HashTests/Axioms.lean`.

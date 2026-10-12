@@ -36,9 +36,6 @@ variable {α : Type} [Word α] (P : Params) [LawfulWord α P.w]
 
 /-! ### Blocks depend only on their bytes -/
 
-theorem size_zeros (n : Nat) : (ByteArray.zeros n).size = n := by
-  rw [size_eq_length]; simp [ByteArray.zeros]
-
 theorem block_congr (hP : P.Valid) (p q : ByteArray) (i j : Nat)
     (hp : i + P.blockBytes ≤ p.size) (hq : j + P.blockBytes ≤ q.size)
     (h : (p.data.toList.drop i).take P.blockBytes = (q.data.toList.drop j).take P.blockBytes) :
@@ -50,14 +47,6 @@ theorem block_congr (hP : P.Valid) (p q : ByteArray) (i j : Nat)
 /-- Compress block `i` of the data `D`, not as the last block. -/
 def step (D : ByteArray) (h : Array α) (i : Nat) : Array α :=
   F P P.rounds h (block P D (i * P.blockBytes)) ((i + 1) * P.blockBytes) false
-
-theorem foldl_congr_mem {β γ : Type} (f g : β → γ → β) (b : β) (l : List γ)
-    (h : ∀ b, ∀ x ∈ l, f b x = g b x) : l.foldl f b = l.foldl g b := by
-  induction l generalizing b with
-  | nil => rfl
-  | cons x l ih =>
-    rw [List.foldl_cons, List.foldl_cons, h b x (by simp)]
-    exact ih _ fun b y hy => h b y (by simp [hy])
 
 /-- The first `c` blocks of the data do not change when more data follows. -/
 theorem foldl_step_append (hP : P.Valid) (D E : ByteArray) (h : Array α) (c : Nat)
@@ -171,14 +160,6 @@ theorem nn_updates (ms : List ByteArray) (s : State α) :
   induction ms generalizing s with
   | nil => rfl
   | cons m ms ih => exact ih _
-
-theorem foldl_append_bytes (ms : List ByteArray) (D : ByteArray) :
-    ms.foldl (· ++ ·) D = D ++ ms.foldl (· ++ ·) ByteArray.empty := by
-  induction ms generalizing D with
-  | nil => exact ByteArray.ext_toList (by simp)
-  | cons m ms ih =>
-    rw [List.foldl_cons, List.foldl_cons, ih, ih (ByteArray.empty ++ m)]
-    exact ByteArray.ext_toList (by simp)
 
 theorem finalize_of_inv (hP : P.Valid) (key salt personal : ByteArray) (nn : Nat)
     (hkey : key.size ≤ P.blockBytes) (msg : ByteArray) (s : State α)

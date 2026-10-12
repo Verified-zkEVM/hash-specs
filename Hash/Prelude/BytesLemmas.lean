@@ -34,6 +34,25 @@ theorem data_extract (b : ByteArray) (i j : Nat) :
 
 theorem size_eq_length (b : ByteArray) : b.size = b.data.toList.length := by simp
 
+theorem size_zeros (n : Nat) : (ByteArray.zeros n).size = n := by
+  rw [size_eq_length]; simp [ByteArray.zeros]
+
+theorem foldl_congr_mem {β γ : Type} (f g : β → γ → β) (b : β) (l : List γ)
+    (h : ∀ b, ∀ x ∈ l, f b x = g b x) : l.foldl f b = l.foldl g b := by
+  induction l generalizing b with
+  | nil => rfl
+  | cons x l ih =>
+    rw [List.foldl_cons, List.foldl_cons, h b x (by simp)]
+    exact ih _ fun b y hy => h b y (by simp [hy])
+
+theorem foldl_append_bytes (ms : List ByteArray) (D : ByteArray) :
+    ms.foldl (· ++ ·) D = D ++ ms.foldl (· ++ ·) ByteArray.empty := by
+  induction ms generalizing D with
+  | nil => exact ByteArray.ext_toList (by simp)
+  | cons m ms ih =>
+    rw [List.foldl_cons, List.foldl_cons, ih, ih (ByteArray.empty ++ m)]
+    exact ByteArray.ext_toList (by simp)
+
 /-! ### Byte lists as bit strings -/
 
 theorem bytesToBitsMSB_take (k : Nat) (l : List UInt8) :

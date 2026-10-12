@@ -413,7 +413,9 @@ The evidence that the Lean specification is the SHA-2 of FIPS 180-4, as of 2026-
 *
   * Fast = reference
   * Proved for all six members: `Hash.SHA2.sha224_eq` to `Hash.SHA2.sha512t256_eq`, from the
-    generic `Hash.SHA2.Equiv.hashWith_eq`. The axiom audit (`HashTests/Axioms.lean`) shows only
+    generic `Hash.SHA2.Equiv.hashWith_eq`. Streaming equals one-shot for every way of splitting
+    the message (`Hash.SHA2.Fast.State.finalize_updates`, and `Hash.sha256Init_eq` and so on
+    for the byte-level API). The axiom audit (`HashTests/Axioms.lean`) shows only
     `propext`, `Classical.choice` and `Quot.sound`.
 *
   * Known-answer tests

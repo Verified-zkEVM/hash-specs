@@ -47,3 +47,4 @@ public import Hash.SHA2.Fast
 public import Hash.SHA2.Instances
 public import Hash.SHA2.Reference
 public import Hash.SHA2.Stream
+public import Hash.SHA2.StreamLemmas

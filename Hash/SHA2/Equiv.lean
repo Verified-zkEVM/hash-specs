@@ -47,6 +47,7 @@ class LawfulWord (α : Type) [Fast.Word α] (w : Nat) where
   bytesToBitsMSB_pushBE (a : ByteArray) (x : α) :
     bytesToBitsMSB (pushBE a x).data.toList =
       bytesToBitsMSB a.data.toList ++ natToBitsBE w (toBV x).toNat
+  toBV_injective : Function.Injective toBV
 
 instance : LawfulWord UInt32 32 where
   toBV := UInt32.toBitVec
@@ -61,6 +62,7 @@ instance : LawfulWord UInt32 32 where
   toBV_shr := UInt32.toBitVec_shiftRight_toUInt32
   toBV_loadBE := ByteArray.toBitVec_getUInt32BE
   bytesToBitsMSB_pushBE := ByteArray.bytesToBitsMSB_pushUInt32BE
+  toBV_injective _ _ h := UInt32.toBitVec_inj.mp h
 
 instance : LawfulWord UInt64 64 where
   toBV := UInt64.toBitVec
@@ -75,6 +77,7 @@ instance : LawfulWord UInt64 64 where
   toBV_shr := UInt64.toBitVec_shiftRight_toUInt64
   toBV_loadBE := ByteArray.toBitVec_getUInt64BE
   bytesToBitsMSB_pushBE := ByteArray.bytesToBitsMSB_pushUInt64BE
+  toBV_injective _ _ h := UInt64.toBitVec_inj.mp h
 
 /-- The rotation and shift amounts of `P` are less than its word size. -/
 def Params.AmountsLt (P : Params) : Prop :=
