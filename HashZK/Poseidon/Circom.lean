@@ -17,9 +17,9 @@ are derived once, on first use.
 
 `HashZK.Poseidon.Circom.poseidon_eq` proves that, through CompPoly's ring isomorphism with
 `ZMod bn254`, it computes the specification: the fast permutation computes the reference
-(`Hash.ZK.Poseidon.Fast.permutation_eq`), the reference commutes with ring isomorphisms
-(`Hash.ZK.Poseidon.Reference.map_permutation`), and the parameters correspond
-(`Hash.ZK.Poseidon.Circom.map_fastParams_toRef`).
+(`Hash.ZK.Poseidon.Fast.permutation_eq`), the fast permutation commutes with maps preserving the
+field operations (`Hash.ZK.Poseidon.Fast.map_permutation`), and so do the parameters
+(`Hash.ZK.Poseidon.Circom.map_fastParams`).
 -/
 
 @[expose] public section
@@ -135,10 +135,8 @@ def poseidon (inputs : Array Fr) : Fr :=
 theorem permutation_eq (t : ℕ) (s : Vector Fr t) :
     (Fast.permutation (paramsCache t).get s).map toZMod =
       Reference.permutation (Hash.ZK.Poseidon.Circom.params t) (s.map toZMod) := by
-  have h := Reference.map_permutation (fastParams Fr t).toRef toZMod.toRingHom s
-  rw [map_fastParams_toRef toZMod.toRingHom (fun x => map_inv₀ toZMod x), fastParams_toRef,
-    RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] at h
-  rw [paramsCache_get, Fast.permutation_eq, h]
+  rw [paramsCache_get]
+  exact map_permutation_fastParams (FieldOps.Hom.ofRingHom toZMod.toRingHom (map_inv₀ toZMod)) t s
 
 /-- The fast Poseidon computes circomlib's Poseidon. -/
 theorem poseidon_eq (inputs : Array Fr) :

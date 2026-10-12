@@ -76,4 +76,6 @@ audit_axioms Hash.MerkleDamgard.iterate_append Hash.Sponge.sponge_prefix Hash.Tr
 -- ZK-friendly hashes: the S-box, and Poseidon (fast = reference, ring homomorphisms, circomlib).
 audit_axioms Hash.ZK.sbox_sbox_invExponent Hash.ZK.sbox_invExponent_sbox Hash.ZK.sbox_bijective
   Hash.ZK.Poseidon.Reference.map_permutation Hash.ZK.Poseidon.Fast.permutation_eq
-  Hash.ZK.Poseidon.Circom.fastParams_toRef Hash.ZK.Poseidon.Circom.map_fastParams_toRef
+  Hash.ZK.FieldOps.pow_eq Hash.ZK.FieldOps.Hom.ofRingHom Hash.ZK.Poseidon.Fast.map_permutation
+  Hash.ZK.Poseidon.Circom.fastParams_toRef Hash.ZK.Poseidon.Circom.map_fastParams
+  Hash.ZK.Poseidon.Circom.map_permutation_fastParams

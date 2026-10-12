@@ -5,8 +5,6 @@ Authors: Derek Sorensen
 -/
 module
 
-public import Hash.Init
-
 /-!
 # The Grain LFSR used for parameter generation
 
@@ -25,9 +23,10 @@ App. E], and implemented by the reference script `generate_parameters_grain.sage
 * A field element is `n` output bits read most significant first, sampled again while it is not
   below `p`.
 
-The state is a natural number below `2⁸⁰` whose most significant bit is `b₀`. Loops carry a
-fuel argument so that the definitions are total and reduce in the kernel; `nextBit` would need
-more than a thousand consecutive discarded pairs to run out, which does not happen for any
+The state is a natural number below `2⁸⁰` whose most significant bit is `b₀`. The module does not
+import Mathlib, so that the executable instances (and the C exports of `HashFFI`) can use it. Loops
+carry a fuel argument so that the definitions are total and reduce in the kernel; `nextBit` would
+need more than a thousand consecutive discarded pairs to run out, which does not happen for any
 instance in this library (their constants are checked against the published tables).
 
 Two encodings of the S-box exist in practice: the reference script (and circomlib) uses code 0
@@ -50,41 +49,41 @@ namespace Hash.ZK.Grain
 /-- The fields of the initial Grain state [Poseidon, App. E]. -/
 structure Params where
   /-- The field type: 1 for a prime field `𝔽_p`, 0 for a binary field. -/
-  field : ℕ
+  field : Nat
   /-- The S-box code (0 for `x ^ α` in the reference script). -/
-  sbox : ℕ
+  sbox : Nat
   /-- The size of a field element in bits. -/
-  n : ℕ
+  n : Nat
   /-- The width `t` of the permutation. -/
-  t : ℕ
+  t : Nat
   /-- The number of full rounds. -/
-  RF : ℕ
+  RF : Nat
   /-- The number of partial rounds. -/
-  RP : ℕ
+  RP : Nat
 
 /-- Bit `b_i` of the state. -/
-def bit (s i : ℕ) : ℕ := (s >>> (79 - i)) &&& 1
+def bit (s i : Nat) : Nat := (s >>> (79 - i)) &&& 1
 
 /-- One clock: the new bit `b_{80} = b_{62} ⊕ b_{51} ⊕ b_{38} ⊕ b_{23} ⊕ b_{13} ⊕ b_0`, and the
 state shifted by one. -/
-def clock (s : ℕ) : ℕ × ℕ :=
+def clock (s : Nat) : Nat × Nat :=
   let b := bit s 62 ^^^ bit s 51 ^^^ bit s 38 ^^^ bit s 23 ^^^ bit s 13 ^^^ bit s 0
   (b, ((s <<< 1) &&& (2 ^ 80 - 1)) ||| b)
 
 /-- Clock `k` times, discarding the output. -/
-def discard : ℕ → ℕ → ℕ
+def discard : Nat → Nat → Nat
   | 0, s => s
   | k + 1, s => discard k (clock s).2
 
 /-- The state after initialization and the 160 discarded clocks [Poseidon, App. E]. -/
-def init (g : Params) : ℕ :=
+def init (g : Params) : Nat :=
   discard 160 <|
     (((((g.field <<< 4 ||| g.sbox) <<< 12 ||| g.n) <<< 12 ||| g.t) <<< 10 ||| g.RF) <<< 10
       ||| g.RP) <<< 30 ||| (2 ^ 30 - 1)
 
 /-- The next bit of the self-shrinking generator: clock twice, and output the second bit if the
 first is 1 [Poseidon, App. E]. -/
-def nextBit : ℕ → ℕ → ℕ × ℕ
+def nextBit : Nat → Nat → Nat × Nat
   | 0, s => (0, s)
   | fuel + 1, s =>
     match clock s with
@@ -93,21 +92,21 @@ def nextBit : ℕ → ℕ → ℕ × ℕ
       | (b₂, s) => if b₁ = 1 then (b₂, s) else nextBit fuel s
 
 /-- `k` output bits, most significant first, appended to `acc`. -/
-def bits : ℕ → ℕ → ℕ → ℕ × ℕ
+def bits : Nat → Nat → Nat → Nat × Nat
   | 0, acc, s => (acc, s)
   | k + 1, acc, s =>
     match nextBit 1000 s with
     | (b, s) => bits k (2 * acc + b) s
 
 /-- An `n`-bit number below `p`, sampled again while it is not [Poseidon, App. E]. -/
-def sampleBelow (p n : ℕ) : ℕ → ℕ → ℕ × ℕ
+def sampleBelow (p n : Nat) : Nat → Nat → Nat × Nat
   | 0, s => (0, s)
   | fuel + 1, s =>
     match bits n 0 s with
     | (v, s) => if v < p then (v, s) else sampleBelow p n fuel s
 
 /-- `k` field elements sampled below `p`, and the state after them. -/
-def sampleList (p n : ℕ) : ℕ → ℕ → List ℕ × ℕ
+def sampleList (p n : Nat) : Nat → Nat → List Nat × Nat
   | 0, s => ([], s)
   | k + 1, s =>
     match sampleBelow p n 1000 s with
@@ -117,7 +116,7 @@ def sampleList (p n : ℕ) : ℕ → ℕ → List ℕ × ℕ
 
 /-- `k` numbers of `n` bits each, reduced modulo `p` (no rejection), and the state after them:
 the samples from which the reference script builds its Cauchy matrix. -/
-def rawList (p n : ℕ) : ℕ → ℕ → List ℕ × ℕ
+def rawList (p n : Nat) : Nat → Nat → List Nat × Nat
   | 0, s => ([], s)
   | k + 1, s =>
     match bits n 0 s with

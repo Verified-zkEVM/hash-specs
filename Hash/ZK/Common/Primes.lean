@@ -5,14 +5,12 @@ Authors: Derek Sorensen
 -/
 module
 
-public import Hash.Init
-
 /-!
 # The primes of the ZK-friendly instances
 
 The moduli of the prime fields over which the instances in `Hash.ZK` are defined. The
 specifications work in `ZMod p`; CompPoly (Layer 2, `HashZK`) supplies fast representations of the
-same fields and the primality certificates.
+same fields and the primality certificates. The module does not import Mathlib.
 
 ## References
 
@@ -28,15 +26,15 @@ namespace Hash.ZK
 
 /-- The order `r` of the BN254 (alt_bn128) groups: the scalar field of BN254, and the base field of
 BabyJubJub and Grumpkin [BN254; EIP-196]. -/
-def bn254 : ℕ := 21888242871839275222246405745257275088548364400416034343698204186575808495617
+def bn254 : Nat := 21888242871839275222246405745257275088548364400416034343698204186575808495617
 
 /-- The BabyBear prime `2³¹ − 2²⁷ + 1` [Plonky3]. -/
-def babyBear : ℕ := 2 ^ 31 - 2 ^ 27 + 1
+def babyBear : Nat := 2 ^ 31 - 2 ^ 27 + 1
 
 /-- The KoalaBear prime `2³¹ − 2²⁴ + 1` [Plonky3]. -/
-def koalaBear : ℕ := 2 ^ 31 - 2 ^ 24 + 1
+def koalaBear : Nat := 2 ^ 31 - 2 ^ 24 + 1
 
 /-- The Goldilocks prime `2⁶⁴ − 2³² + 1`. -/
-def goldilocks : ℕ := 2 ^ 64 - 2 ^ 32 + 1
+def goldilocks : Nat := 2 ^ 64 - 2 ^ 32 + 1
 
 end Hash.ZK

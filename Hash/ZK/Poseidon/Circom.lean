@@ -5,9 +5,8 @@ Authors: Derek Sorensen
 -/
 module
 
-public import Hash.ZK.Common.Grain
-public import Hash.ZK.Common.Primes
-public import Hash.ZK.Poseidon.Fast
+public import Hash.ZK.Poseidon.CircomParams
+public import Hash.ZK.Poseidon.Equiv
 public import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -50,30 +49,6 @@ sponge of [Poseidon, §4.2].
 
 namespace Hash.ZK.Poseidon.Circom
 
-/-- The number of partial rounds of circomlib's width-`t` instance, `t = 2 … 17`: the output of
-the reference round-number script for 128-bit security, rounded up to a multiple of `t`
-[circomlib, `N_ROUNDS_P`]. -/
-def partialRounds (t : ℕ) : ℕ :=
-  [56, 57, 56, 60, 60, 63, 64, 63, 60, 66, 60, 65, 70, 60, 64, 68].getD (t - 2) 0
-
-/-- The Grain parameters of the width-`t` instance. -/
-def grainParams (t : ℕ) : Grain.Params := ⟨1, 0, 254, t, 8, partialRounds t⟩
-
-/-- The `2t` samples `x₀ … x_{t−1}, y₀ … y_{t−1}` of the Cauchy matrix: distinct, with no
-`x_i + y_j` divisible by `p`, drawn again otherwise [hadeshash]. -/
-def cauchySeeds (p n t : ℕ) : ℕ → ℕ → List ℕ
-  | 0, _ => []
-  | fuel + 1, s =>
-    match Grain.rawList p n (2 * t) s with
-    | (l, s) =>
-      if l.Nodup ∧ ∀ i < t, ∀ j < t, (l.getD i 0 + l.getD (t + j) 0) % p ≠ 0 then l
-      else cauchySeeds p n t fuel s
-
-/-- The Grain samples of the width-`t` instance: the round constants, then the Cauchy seeds. -/
-def samples (t : ℕ) : List ℕ × List ℕ :=
-  match Grain.sampleList bn254 254 ((8 + partialRounds t) * t) (Grain.init (grainParams t)) with
-  | (cs, s) => (cs, cauchySeeds bn254 254 t 100 s)
-
 /-- The parameters of circomlib's width-`t` Poseidon over `ZMod bn254`. -/
 def params (t : ℕ) : Params (ZMod bn254) t :=
   let (cs, xy) := samples t
@@ -95,40 +70,25 @@ def poseidonEx (n : ℕ) (initState : ZMod bn254) (inputs : Fin n → ZMod bn254
 def poseidon (n : ℕ) (inputs : Fin n → ZMod bn254) : ZMod bn254 :=
   (Reference.permutation (params (n + 1)) (Vector.ofFn (Fin.cons 0 inputs)))[0]
 
-/-! ### The fast instances -/
-
-/-- The parameters of circomlib's width-`t` instance in a ring `F` with inverses, for the fast
-permutation: the constants and the matrix are computed once. -/
-def fastParams (F : Type*) [CommRing F] [Inv F] (t : ℕ) : Fast.Params F t :=
-  let (cs, xy) := samples t
-  ⟨5, 8, partialRounds t, (cs.map fun c : ℕ => (c : F)).toArray,
-    Vector.ofFn fun i => Vector.ofFn fun j => ((xy.getD i.val 0 + xy.getD (t + j.val) 0 : ℕ) : F)⁻¹⟩
-
-/-- Over `ZMod bn254`, the fast parameters are the circomlib parameters. -/
+/-- Over `ZMod bn254`, the fast parameters (`Hash.ZK.Poseidon.Circom.fastParams`) are the
+circomlib parameters. -/
 theorem fastParams_toRef (t : ℕ) : (fastParams (ZMod bn254) t).toRef = params t := by
   unfold fastParams params
   rcases samples t with ⟨cs, xy⟩
-  simp only [Fast.Params.toRef, Vector.getElem_ofFn, Fin.getElem_fin]
+  simp only [Fast.Params.toRef, Vector.getElem_ofFn, Fin.getElem_fin, FieldOps.ofNat_eq,
+    FieldOps.inv_eq]
   congr
   funext r i
   simp only [Array.getD_eq_getD_getElem?, List.getElem?_toArray, List.getElem?_map,
     List.getD_eq_getElem?_getD]
   cases cs[r * t + i.val]? <;> simp
 
-/-- The fast parameters in `F` map to those in `G` under a ring homomorphism that preserves
-inverses, such as a ring isomorphism between fields. -/
-theorem map_fastParams_toRef {F G : Type*} [CommRing F] [Inv F] [CommRing G] [Inv G]
-    (φ : F →+* G) (hinv : ∀ x, φ x⁻¹ = (φ x)⁻¹) (t : ℕ) :
-    (fastParams F t).toRef.map φ = (fastParams G t).toRef := by
-  unfold fastParams
-  rcases samples t with ⟨cs, xy⟩
-  simp only [Fast.Params.toRef, Params.map, Vector.getElem_ofFn, Fin.getElem_fin]
-  congr
-  · funext r i
-    simp only [Array.getD_eq_getD_getElem?, List.getElem?_toArray, List.getElem?_map]
-    cases cs[r * t + i.val]? <;> simp
-  · funext i j
-    change φ (((xy.getD i.val 0 + xy.getD (t + j.val) 0 : ℕ) : F))⁻¹ = _
-    rw [hinv, map_natCast]
+/-- The fast permutation, with the fast parameters in any representation `F` of the field,
+computes circomlib's permutation through a map `f : F → ZMod bn254` that preserves the
+operations. -/
+theorem map_permutation_fastParams {F : Type} [FieldOps F] {f : F → ZMod bn254}
+    (hf : FieldOps.Hom f) (t : ℕ) (s : Vector F t) :
+    (Fast.permutation (fastParams F t) s).map f = Reference.permutation (params t) (s.map f) := by
+  rw [Fast.map_permutation _ hf, map_fastParams hf, Fast.permutation_eq, fastParams_toRef]
 
 end Hash.ZK.Poseidon.Circom
