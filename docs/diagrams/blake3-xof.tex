@@ -1,0 +1,31 @@
+% BLAKE3 extendable output [BLAKE3, §2.6]: the root node's compression is repeated with the
+% ROOT flag and counters 0, 1, 2, ...; each full 16-word output gives 64 bytes.
+% Original drawing for the Hash library.
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\input{style}
+\begin{document}
+\begin{tikzpicture}
+  \def\dx{2.6}
+  \node[reg, fill=hsorange!25, align=center, font=\sffamily\scriptsize] (root) at (0,0)
+    {root node\\(cv, block, $b$, $d$)};
+  \foreach \i in {0,1,2} {
+    \node[fn, minimum width=13mm, minimum height=8mm] (F\i) at (\i*\dx+2.6, 0) {compress};
+    \node[font=\sffamily\scriptsize, anchor=west, align=left] at ($(F\i.south)+(0.08,-0.4)$) {$t = \i$\\$d \mid \textsc{root}$};
+    \node[input, fill=hspurple!20, minimum width=14mm] (O\i) at (\i*\dx+2.6, -1.5) {64 bytes};
+    \draw[wire] (F\i) -- (O\i);
+  }
+  \draw[wire] (root.east) -- (F0.west);
+  \draw[wire] (root.east) -- ++(0.3,0) |- ++(0,0.9) -| (F1.north);
+  \draw[wire] (root.east) -- ++(0.3,0) |- ++(0,0.9) -| (F2.north);
+  \node[font=\sffamily\small] at (3*\dx+2.3, -1.5) {$\cdots$};
+  \node[font=\sffamily\scriptsize, anchor=north] at (1*\dx+2.6, -2.0)
+    {output = the first $d$ bytes of the concatenation; shorter outputs are prefixes};
+  \begin{scope}[on background layer]
+    \coordinate (e1) at (-1.2,-2.6);
+    \coordinate (e2) at (3*\dx+2.9,1.4);
+    \node[card, fit=(e1)(e2), inner sep=2pt] {};
+  \end{scope}
+\end{tikzpicture}
+\end{document}
