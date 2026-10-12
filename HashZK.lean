@@ -6,11 +6,12 @@ Authors: Derek Sorensen
 module
 
 public import CompPoly.Fields.BN254
+public import HashZK.Poseidon.Circom
 
 /-!
-# Layer 2: CompPoly integration (placeholder)
+# Layer 2: CompPoly integration
 
-This library will hold the fast field instances of the ZK-friendly hashes on CompPoly's
-`Fast` field types, and the ring isomorphisms relating them to `ZMod p` (ROADMAP.md Phase 4).
-For now it only checks that CompPoly builds and imports on our toolchain.
+The fast instances of the ZK-friendly hashes on CompPoly's Montgomery field types, with proofs,
+through CompPoly's ring isomorphisms, that they compute the specifications over `ZMod p`
+(ROADMAP.md Phase 4).
 -/

@@ -53,4 +53,5 @@ public import Hash.ZK.Common.Grain
 public import Hash.ZK.Common.Primes
 public import Hash.ZK.Common.Sbox
 public import Hash.ZK.Poseidon.Circom
+public import Hash.ZK.Poseidon.Fast
 public import Hash.ZK.Poseidon.Reference

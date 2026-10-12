@@ -7,7 +7,7 @@ module
 
 public import Hash.ZK.Common.Grain
 public import Hash.ZK.Common.Primes
-public import Hash.ZK.Poseidon.Reference
+public import Hash.ZK.Poseidon.Fast
 public import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -94,5 +94,41 @@ def poseidonEx (n : ℕ) (initState : ZMod bn254) (inputs : Fin n → ZMod bn254
 [circomlib]. -/
 def poseidon (n : ℕ) (inputs : Fin n → ZMod bn254) : ZMod bn254 :=
   (Reference.permutation (params (n + 1)) (Vector.ofFn (Fin.cons 0 inputs)))[0]
+
+/-! ### The fast instances -/
+
+/-- The parameters of circomlib's width-`t` instance in a ring `F` with inverses, for the fast
+permutation: the constants and the matrix are computed once. -/
+def fastParams (F : Type*) [CommRing F] [Inv F] (t : ℕ) : Fast.Params F t :=
+  let (cs, xy) := samples t
+  ⟨5, 8, partialRounds t, (cs.map fun c : ℕ => (c : F)).toArray,
+    Vector.ofFn fun i => Vector.ofFn fun j => ((xy.getD i.val 0 + xy.getD (t + j.val) 0 : ℕ) : F)⁻¹⟩
+
+/-- Over `ZMod bn254`, the fast parameters are the circomlib parameters. -/
+theorem fastParams_toRef (t : ℕ) : (fastParams (ZMod bn254) t).toRef = params t := by
+  unfold fastParams params
+  rcases samples t with ⟨cs, xy⟩
+  simp only [Fast.Params.toRef, Vector.getElem_ofFn, Fin.getElem_fin]
+  congr
+  funext r i
+  simp only [Array.getD_eq_getD_getElem?, List.getElem?_toArray, List.getElem?_map,
+    List.getD_eq_getElem?_getD]
+  cases cs[r * t + i.val]? <;> simp
+
+/-- The fast parameters in `F` map to those in `G` under a ring homomorphism that preserves
+inverses, such as a ring isomorphism between fields. -/
+theorem map_fastParams_toRef {F G : Type*} [CommRing F] [Inv F] [CommRing G] [Inv G]
+    (φ : F →+* G) (hinv : ∀ x, φ x⁻¹ = (φ x)⁻¹) (t : ℕ) :
+    (fastParams F t).toRef.map φ = (fastParams G t).toRef := by
+  unfold fastParams
+  rcases samples t with ⟨cs, xy⟩
+  simp only [Fast.Params.toRef, Params.map, Vector.getElem_ofFn, Fin.getElem_fin]
+  congr
+  · funext r i
+    simp only [Array.getD_eq_getD_getElem?, List.getElem?_toArray, List.getElem?_map]
+    cases cs[r * t + i.val]? <;> simp
+  · funext i j
+    change φ (((xy.getD i.val 0 + xy.getD (t + j.val) 0 : ℕ) : F))⁻¹ = _
+    rw [hinv, map_natCast]
 
 end Hash.ZK.Poseidon.Circom
