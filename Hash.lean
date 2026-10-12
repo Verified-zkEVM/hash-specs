@@ -14,6 +14,8 @@ public import Hash.BLAKE2.Reference
 public import Hash.Construction.MerkleDamgard
 public import Hash.Construction.Sponge
 public import Hash.Construction.SpongeLemmas
+public import Hash.Construction.Tree
+public import Hash.Construction.TreeLemmas
 public import Hash.Keccak.API
 public import Hash.Keccak.Bijective
 public import Hash.Keccak.Constants

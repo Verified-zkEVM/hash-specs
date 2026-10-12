@@ -50,4 +50,4 @@ audit_axioms Hash.BLAKE2.Equiv.hashWith_eq Hash.BLAKE2.Equiv.F_eq Hash.BLAKE2.bl
   Hash.BLAKE2.blake2sWith_eq Hash.BLAKE2.blake2b_eq Hash.BLAKE2.blake2s_eq Hash.BLAKE2.blake2bF_eq
 
 -- Constructions.
-audit_axioms Hash.MerkleDamgard.iterate_append Hash.Sponge.sponge_prefix
+audit_axioms Hash.MerkleDamgard.iterate_append Hash.Sponge.sponge_prefix Hash.Tree.finish_pushAll
