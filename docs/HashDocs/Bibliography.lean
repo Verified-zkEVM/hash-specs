@@ -91,4 +91,14 @@ def khovratovich2012 : InProceedings where
   booktitle := inlines!"Fast Software Encryption (FSE 2012)"
   url := some "https://eprint.iacr.org/2011/286"
 
+/-- Bertoni, Daemen, Peeters and Van Assche, EUROCRYPT 2008: the sponge construction is
+indifferentiable from a random oracle. -/
+def bertoni2008 : InProceedings where
+  title := inlines!"On the Indifferentiability of the Sponge Construction"
+  authors := #[inlines!"Guido Bertoni", inlines!"Joan Daemen", inlines!"Michaël Peeters",
+    inlines!"Gilles Van Assche"]
+  year := 2008
+  booktitle := inlines!"Advances in Cryptology – EUROCRYPT 2008, LNCS 4965"
+  url := some "https://doi.org/10.1007/978-3-540-78967-3_11"
+
 end HashDocs.Bib

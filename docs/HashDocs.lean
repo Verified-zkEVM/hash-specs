@@ -5,6 +5,7 @@ Authors: Derek Sorensen
 -/
 import VersoManual
 import HashDocs.SHA2
+import HashDocs.SHA3
 
 open Verso.Genre Manual
 
@@ -19,3 +20,5 @@ a *fast* specification proved equal to it, and a differential-testing harness th
 fast specification against independent implementations.
 
 {include 1 HashDocs.SHA2}
+
+{include 1 HashDocs.SHA3}
