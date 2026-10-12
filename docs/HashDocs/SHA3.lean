@@ -153,6 +153,9 @@ tag := "sha3-round"
 One round applies five *step mappings*, $`\mathrm{Rnd}(A, i_r) = ι(χ(π(ρ(θ(A)))), i_r)` (§3.3).
 
 ## θ
+%%%
+tag := "sha3-theta"
+%%%
 
 θ XORs each bit with the parities of two nearby columns: column $`x − 1` of the same slice, and
 column $`x + 1` of the previous slice (§3.2.1). It diffuses every bit to 11 others.
@@ -162,6 +165,9 @@ column $`x + 1` of the previous slice (§3.2.1). It diffuses every bit to 11 oth
 {docstring Hash.Keccak.θ}
 
 ## ρ and π
+%%%
+tag := "sha3-rho-pi"
+%%%
 
 ρ rotates each lane along $`z` by a fixed offset, and π permutes the lanes (§3.2.2, §3.2.3):
 
@@ -172,6 +178,9 @@ column $`x + 1` of the previous slice (§3.2.1). It diffuses every bit to 11 oth
 {docstring Hash.Keccak.π}
 
 ## χ
+%%%
+tag := "sha3-chi"
+%%%
 
 χ is the only nonlinear step. Each row of five bits is transformed independently (§3.2.4):
 
@@ -180,6 +189,9 @@ column $`x + 1` of the previous slice (§3.2.1). It diffuses every bit to 11 oth
 {docstring Hash.Keccak.χ}
 
 ## ι
+%%%
+tag := "sha3-iota"
+%%%
 
 ι XORs a round constant into lane $`(0, 0)`, breaking the symmetry between rounds (§3.2.5). Its
 bits come from a linear feedback shift register:
@@ -189,6 +201,9 @@ bits come from a linear feedback shift register:
 {docstring Hash.Keccak.ι}
 
 ## The permutation
+%%%
+tag := "sha3-permutation"
+%%%
 
 Keccak-p\[b, n\_r\] applies the last $`n_r` of the $`12 + 2ℓ` rounds, and Keccak-f\[b\] applies all of
 them (§3.3, §3.4):
