@@ -39,8 +39,8 @@ public import Hash.Prelude.Arith
 public import Hash.Prelude.Bits
 public import Hash.Prelude.BitsLemmas
 public import Hash.Prelude.Bytes
-public import Hash.Prelude.LittleEndianLemmas
 public import Hash.Prelude.BytesLemmas
+public import Hash.Prelude.LittleEndianLemmas
 public import Hash.SHA2.API
 public import Hash.SHA2.Constants
 public import Hash.SHA2.Equiv
@@ -49,3 +49,8 @@ public import Hash.SHA2.Instances
 public import Hash.SHA2.Reference
 public import Hash.SHA2.Stream
 public import Hash.SHA2.StreamLemmas
+public import Hash.ZK.Common.Grain
+public import Hash.ZK.Common.Primes
+public import Hash.ZK.Common.Sbox
+public import Hash.ZK.Poseidon.Circom
+public import Hash.ZK.Poseidon.Reference
