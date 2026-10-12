@@ -70,12 +70,16 @@ globs = ["HashKAT.+"]
 name = "hash-kat"
 root = "HashKAT.Main"
 
-# Layer 3: the Verso book.
+# Layer 3: the Verso book. Chapters on the ZK-friendly hashes import Mathlib, which activates
+# Mathlib's style linters; two of them do not apply to a Verso book: `hashCommand` rejects
+# Verso's `#doc` command, and `style.header` expects Mathlib's module header.
 [[lean_lib]]
 name = "HashDocs"
 srcDir = "docs"
+leanOptions = { weak.linter.hashCommand = false, weak.linter.style.header = false }
 
 [[lean_exe]]
 name = "hash-docs"
 srcDir = "docs"
 root = "HashDocs.Main"
+leanOptions = { weak.linter.hashCommand = false, weak.linter.style.header = false }

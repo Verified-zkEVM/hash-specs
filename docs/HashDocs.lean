@@ -8,6 +8,7 @@ import HashDocs.SHA2
 import HashDocs.SHA3
 import HashDocs.BLAKE2
 import HashDocs.BLAKE3
+import HashDocs.Poseidon
 
 open Verso.Genre Manual
 
@@ -28,3 +29,5 @@ fast specification against independent implementations.
 {include 1 HashDocs.BLAKE2}
 
 {include 1 HashDocs.BLAKE3}
+
+{include 1 HashDocs.Poseidon}

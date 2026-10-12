@@ -130,4 +130,27 @@ def luykx2016 : Article where
   number := inlines!"1"
   url := some "https://doi.org/10.13154/tosc.v2016.i1.158-176"
 
+/-- Grassi, Khovratovich, Rechberger, Roy and Schofnegger, USENIX Security 2021: the Poseidon
+permutation and hash. -/
+def grassi2021 : InProceedings where
+  title := inlines!"Poseidon: A New Hash Function for Zero-Knowledge Proof Systems"
+  authors := #[inlines!"Lorenzo Grassi", inlines!"Dmitry Khovratovich",
+    inlines!"Christian Rechberger", inlines!"Arnab Roy", inlines!"Markus Schofnegger"]
+  year := 2021
+  booktitle := inlines!"30th USENIX Security Symposium"
+  url := some "https://eprint.iacr.org/2019/458"
+
+/-- Bariant, Bouvier, Leurent and Perrin, ToSC 2022: algebraic attacks on round-reduced
+Poseidon and other arithmetization-oriented primitives. -/
+def bariant2022 : Article where
+  title := inlines!"Algebraic Attacks against Some Arithmetization-Oriented Primitives"
+  authors := #[inlines!"Augustin Bariant", inlines!"Clémence Bouvier", inlines!"Gaëtan Leurent",
+    inlines!"Léo Perrin"]
+  journal := inlines!"IACR Transactions on Symmetric Cryptology"
+  year := 2022
+  month := none
+  volume := inlines!"2022"
+  number := inlines!"3"
+  url := some "https://doi.org/10.46586/tosc.v2022.i3.73-101"
+
 end HashDocs.Bib
