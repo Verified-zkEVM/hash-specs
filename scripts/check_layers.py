@@ -2,7 +2,7 @@
 """Check the layering rules of ROADMAP.md §2.1.
 
 1. Layer 1 (`Hash/`, `HashTests/`) imports only Lean core, Mathlib and Mathlib's own
-   dependencies, and other Layer 1 modules. It never imports CompPoly, Verso, or Layers 2 and 3.
+   dependencies, and other Layer 1 modules. It never imports CompPoly or Layers 2 and 3.
 2. The C-export library (`HashFFI`) is Mathlib-free: none of its transitive imports inside this
    repository or CompPoly import Mathlib, Batteries, Aesop, Qq, Plausible or `Hash.Init`. It is linked into the
    Rust harness as a static library, and must stay small.
@@ -20,7 +20,7 @@ IMPORT = re.compile(r"^\s*(?:public\s+)?(?:meta\s+)?import\s+(?:all\s+)?([\w.«�
 LAYER1_DIRS = ["Hash", "HashTests"]
 LAYER1_ALLOWED = ("Init", "Std", "Lean", "Mathlib", "Batteries", "Aesop", "Qq", "Plausible",
                   "ProofWidgets", "ImportGraph", "LeanSearchClient", "Hash", "HashTests")
-LAYER1_FORBIDDEN_LOCAL = ("HashZK", "HashFFI", "HashKAT", "HashDocs")
+LAYER1_FORBIDDEN_LOCAL = ("HashZK", "HashFFI", "HashKAT")
 MATHLIB_FAMILY = ("Mathlib", "Batteries", "Aesop", "Qq", "Plausible", "ProofWidgets", "ImportGraph",
                   "LeanSearchClient")
 FORBIDDEN_TOKENS = re.compile(r"\b(sorry|admit|native_decide)\b|^\s*axiom\s", re.M)

@@ -46,6 +46,8 @@ $(x, y)$ is the little-endian 64-bit word at byte offset $8(x+5y)$, and state bi
 bit $z$ (weight $2^z$) of that word. This is the representation of `Fast.lean`, where lane
 $(x, y)$ is `UInt64` index $x + 5y$.
 
+![Bytes, bits and lanes in SHA-3](../../docs/diagrams/keccak-data-model.svg)
+
 ## The permutation Keccak-p[b, n_r]
 
 A round is $\mathrm{Rnd}(A, i_r) = \iota(\chi(\pi(\rho(\theta(A)))), i_r)$ [FIPS 202, §3.3]. All
@@ -115,6 +117,14 @@ The ρ offsets and the round constants are written in `Constants.lean` as tables
 to the derivations above by kernel computation (`Hash.Keccak.rhoOffsets_eq`,
 `Hash.Keccak.roundConstants_eq`).
 
+![The Keccak state array](../../docs/diagrams/keccak-state.svg)
+
+![The step mapping θ](../../docs/diagrams/keccak-theta.svg)
+
+![The step mappings ρ and π](../../docs/diagrams/keccak-rho-pi.svg)
+
+![The step mapping χ on one row](../../docs/diagrams/keccak-chi.svg)
+
 ## The sponge
 
 SPONGE[f, pad, r] [FIPS 202, §4, Alg. 8; BDPV 2007] turns a permutation $f$ of $b$-bit strings into a function
@@ -136,6 +146,8 @@ so that $m + j + 2$ is a positive multiple of $x$. At least two bits are always 
 
 **KECCAK[c]** [FIPS 202, §5.2] = SPONGE[Keccak-p[1600, 24], `pad10*1`, 1600 − c]
 (`Hash.Keccak.Reference.keccak`).
+
+![The sponge construction](../../docs/diagrams/keccak-sponge.svg)
 
 ## Instances
 
@@ -184,6 +196,22 @@ In between are zero bytes. `Fast.pad` implements exactly this, and
   $d$ is not a domain separator: SHAKE128$(M, 256)$ begins with SHAKE128$(M, 128)$ [FIPS 202, App. A.2].
 - *Reduced rounds.* Practical collision attacks exist on round-reduced instances (up to 6 of the
   24 rounds for some Keccak instances) [Guo et al. 2020]; none reaches the full 24 rounds.
+
+## Assurance
+
+The evidence that the Lean specification is the SHA-3 of FIPS 202, as of 2026-10-12:
+
+| Evidence | Status |
+|----------|--------|
+| Reference transcription | `Hash.Keccak.KeccakP`, `Hash.Construction.Sponge` and `Hash.Keccak.SHA3`, for every width $b ∈ \{25, …, 1600\}$ and number of rounds, each definition citing its section of FIPS 202. `Hash.Keccak.keccakP_eq_algorithm7` shows that the evaluated form is Algorithm 7 as written. |
+| Constants | The ρ offsets and the round constants are proved equal to Algorithms 2 and 5–6. |
+| Fast = reference | Proved for all seven functions: `Hash.Keccak.sha3x224_eq` to `Hash.Keccak.keccak256_eq`, from `Hash.Keccak.Equiv.keccakP_toString` (lanes against state arrays) and `Hash.Keccak.Equiv.sponge_eq` (bytes against bits). The axiom audit shows only `propext`, `Classical.choice` and `Quot.sound`. |
+| Further properties | Keccak-p\[b, n\_r\] is a bijection for every $b$ (`Hash.Keccak.keccakPState_bijective`, `Hash.Keccak.keccakP_injective`, `Hash.Keccak.keccakP_surjective`). SHAKE128 and SHAKE256 are prefix-consistent, on bits and on bytes. Streaming equals one-shot for every way of splitting the message and every output length (`Hash.Keccak.Fast.State.squeezeBytes_updates`, and `Hash.sha3x256Init_eq` and so on for the byte-level API). |
+| Known-answer tests | All 4642 NIST CAVP SHA3VS vectors (short and long messages, variable output and Monte Carlo) pass, and the 4042 message vectors pass again through the streaming interface in five splitting patterns (`lake exe hash-kat`). Keccak-256 has no NIST vectors; it is covered by differential testing and a kernel-checked example. |
+| Differential testing | Every message length up to 505 bytes, XOF output lengths around the rate boundaries, a 1 MiB message, random messages and random streaming splits agree with RustCrypto `sha3`, `tiny-keccak`, AWS-LC (SHA3-256/384/512) and `alloy-primitives` (Keccak-256). |
+| Fuzzing | Two `cargo-fuzz` targets (one-shot and streaming), run nightly in CI; no divergence has been found. The roadmap's budget of $10^9$ executions per oracle has not yet been reached. |
+| Other formal specifications | EasyCrypt and Jasmin [Almeida et al. 2019], F* (HACL*), Cryptol, ACL2, and several Lean specifications of Keccak-256 and SHA-3 (informational; see `LIT-REVIEW.md`). |
+| Known deviations | The fast specification takes byte strings, so messages whose length is not a multiple of 8 bits are covered only by the reference specification. |
 
 ## In this directory
 

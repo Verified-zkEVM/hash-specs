@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Compile every TikZ diagram in this directory to an SVG in ../static/.
+# Compile every TikZ diagram in this directory to an SVG next to its source.
 # Requires pdflatex (TeX Live) and pdftocairo (poppler-utils).
 set -euo pipefail
 cd "$(dirname "$0")"
-out=../static
+out=.
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 for tex in *.tex; do

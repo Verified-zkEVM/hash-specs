@@ -17,7 +17,6 @@ rationale are in [`ROADMAP.md`](ROADMAP.md).
 | Differential tests against other implementations | `cd harness/hash-lean && cargo test --release` |
 | Fuzzing (one target) | `cd harness/fuzz && cargo +nightly fuzz run sha2` |
 | Benchmarks (a record only, see `harness/BENCHMARKS.md`) | `cd harness/hash-lean && cargo bench`, then `python3 harness/scripts/bench_report.py` |
-| The book | `lake exe hash-docs --output _site`, then open `_site/html-multi/index.html` |
 | Rebuild the diagrams | `docs/diagrams/build.sh` (needs TeX Live and `pdftocairo`) |
 | Build Layer 1 on CSLib's pins (advisory) | `scripts/cslib_compat.sh` |
 
@@ -32,7 +31,7 @@ The repository is one Lake package with three layers of libraries (ROADMAP.md §
    that Layer 1 imports nothing else.
 2. **ZK integration**: `HashZK`, which may also use CompPoly.
 3. **Tooling**: `HashFFI` (C exports), `HashKAT` (full test suites), `harness/` (Rust),
-   `docs/` (the Verso book).
+   `docs/` (diagrams and research notes).
 
 Within Layer 1, files that do not need Mathlib must not import it. This includes the prelude, and
 the reference and fast specifications of the byte-oriented hashes. That keeps the C-export library
@@ -104,10 +103,11 @@ reference repository and commit, and generation script.
 ## Documentation
 
 - Every declaration has a docstring. Module docstrings explain the file and give references.
-- The book (`docs/`) has one chapter per hash, following the template in ROADMAP.md §3. Code
-  in the book is elaborated against the library.
-- Diagrams are original TikZ in `docs/diagrams/`, compiled to SVG in `docs/static/` with
-  `docs/diagrams/build.sh`. Use the shared style (`style.tex`), never copy figures from papers,
+- Each hash family has a `README.md` in its directory (for example `Hash/SHA2/README.md`): the
+  specification explained with citations, security notes, the assurance table (what has been
+  proved and tested), the files and main theorems, and references.
+- Diagrams are original TikZ in `docs/diagrams/`, compiled to SVG beside their sources with
+  `docs/diagrams/build.sh`, and embedded in the family READMEs. Use the shared style (`style.tex`), never copy figures from papers,
   and commit both the `.tex` source and the `.svg`.
 - Every source goes in `references.bib`, with a DOI or stable URL.
 

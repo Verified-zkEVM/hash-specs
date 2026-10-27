@@ -29,6 +29,8 @@ $`w/8`$ bytes is the least significant [RFC 7693, §2.4]. A 16-word message bloc
 the little-endian decoding of a block of $`16 \cdot w/8`$ bytes; the digest is the final chain
 value $`h[0..7]`$ encoded in the same order.
 
+![Bytes and words in BLAKE2](../../docs/diagrams/blake2-data-model.svg)
+
 ## Parameters
 
 | | BLAKE2b | BLAKE2s |
@@ -73,6 +75,8 @@ and 11 of BLAKE2b reuse $`\sigma_0`$ and $`\sigma_1`$.
 equal the SHA-512 and SHA-256 initial hash values of `Hash.SHA2` (`blake2b_IV`, `blake2s_IV`),
 and that `SIGMA` has ten rows, each a permutation of `List.range 16` (`SIGMA_perm`).
 
+![The BLAKE2b parameter block](../../docs/diagrams/blake2-params.svg)
+
 ## The mixing function G
 
 $`G`$ updates four words $`v[a], v[b], v[c], v[d]`$ of the 16-word work vector with two message
@@ -88,6 +92,8 @@ v[c] &\leftarrow v[c] + v[d],     & v[b] &\leftarrow (v[b] \oplus v[c]) \ggg R_4
 ```
 
 The eight assignments are performed in reading order (row by row, left to right).
+
+![The mixing function G](../../docs/diagrams/blake2-g.svg)
 
 ## The compression function F
 
@@ -125,6 +131,8 @@ h'[i] = h[i] \oplus v[i] \oplus v[i + 8], \qquad 0 \le i < 8.
 
 The reference `F` takes the number of rounds as an argument; BLAKE2 uses $`r = 12`$ (BLAKE2b) or
 $`r = 10`$ (BLAKE2s).
+
+![The BLAKE2 work vector](../../docs/diagrams/blake2-state.svg)
 
 ## The hash
 
@@ -164,6 +172,8 @@ t_{\mathrm{last}} = \begin{cases} ll & kk = 0, \\ ll + bb & kk > 0. \end{cases}
 **Output.** The digest is the first $`nn`$ bytes of the little-endian encoding of
 $`h_{dd}[0..7]`$.
 
+![BLAKE2 hashing](../../docs/diagrams/blake2-mode.svg)
+
 ## EIP-152
 
 [EIP-152] adds a precompile at address `0x09` computing the BLAKE2b compression function with
@@ -196,6 +206,21 @@ rounds continue the schedule $`\sigma_{i \bmod 10}`$.
   length-extension attack of plain Merkle–Damgård hashes, and keyed BLAKE2 is a MAC without the
   nested construction of HMAC [BLAKE2].
 - The EIP-152 `F` with fewer than 12 rounds is not BLAKE2 and carries no security claim.
+
+## Assurance
+
+The evidence that the Lean specification is the BLAKE2 of RFC 7693, as of 2026-10-12:
+
+| Evidence | Status |
+|----------|--------|
+| Reference transcription | `Hash.BLAKE2.Reference`, for both word sizes and any number of rounds, each definition citing its section of RFC 7693 or of the BLAKE2 specification (parameter block). |
+| Constants | The IVs are proved equal to the SHA-2 initial hash values, and each row of `SIGMA` is proved a permutation. |
+| Fast = reference | Proved for BLAKE2b and BLAKE2s with every key of at most one block, salt, personalisation and output length (`Hash.BLAKE2.blake2bWith_eq`, `Hash.BLAKE2.blake2sWith_eq`), and for the EIP-152 compression function with any number of rounds (`Hash.BLAKE2.blake2bF_eq`). Streaming equals one-shot, for every way of splitting the message and every key of at most one block (`Hash.blake2bInit_eq`, `Hash.blake2sInit_eq`). The axiom audit shows only `propext`, `Classical.choice` and `Quot.sound`. |
+| Known-answer tests | All 1024 keyed and unkeyed vectors of the BLAKE2 team's `blake2-kat.json` pass, and again through the streaming interface in five splitting patterns; EIP-152 test vectors 0–7 pass (vector 8, with $2^{32} − 1$ rounds, is skipped as too slow). Kernel-checked examples cover RFC 7693 Appendices A and B and EIP-152 vector 5. |
+| Differential testing | Every message length up to 385 bytes with several key lengths, every output length, a 1 MiB message, random parameters, messages and streaming splits agree with `blake2b_simd`/`blake2s_simd` and RustCrypto `blake2`. The precompile agrees with `revm-precompile` and the `eip-152` crate on round counts 0–100, random inputs and invalid inputs. |
+| Fuzzing | Three `cargo-fuzz` targets (one-shot with parameters, streaming, and the precompile on raw inputs); no divergence has been found. The roadmap's budget of $10^9$ executions per oracle has not yet been reached. |
+| Other formal specifications | HACL* and hacspec (F*), Cryptol and ACL2 specify BLAKE2, and Verifereum (HOL4) the EIP-152 $F$ (informational; see `LIT-REVIEW.md`). |
+| Known deviations | Keys longer than one block are outside RFC 7693 and outside the equivalence theorems. The tree-hashing parameters of the BLAKE2 specification are fixed to sequential mode. |
 
 ## In this directory
 

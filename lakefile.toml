@@ -32,13 +32,7 @@ name = "CompPoly"
 git = "https://github.com/Verified-zkEVM/CompPoly"
 rev = "v4.34.0-patch2"
 
-# Documentation only (`HashDocs`).
-[[require]]
-name = "verso"
-git = "https://github.com/leanprover/verso"
-rev = "v4.34.0"
-
-# Layer 1: the core specifications. Mathlib-only; see `scripts/check_layer_imports.py`.
+# Layer 1: the core specifications. Mathlib-only; see `scripts/check_layers.py`.
 [[lean_lib]]
 name = "Hash"
 
@@ -69,17 +63,3 @@ globs = ["HashKAT.+"]
 [[lean_exe]]
 name = "hash-kat"
 root = "HashKAT.Main"
-
-# Layer 3: the Verso book. Chapters on the ZK-friendly hashes import Mathlib, which activates
-# Mathlib's style linters; two of them do not apply to a Verso book: `hashCommand` rejects
-# Verso's `#doc` command, and `style.header` expects Mathlib's module header.
-[[lean_lib]]
-name = "HashDocs"
-srcDir = "docs"
-leanOptions = { weak.linter.hashCommand = false, weak.linter.style.header = false }
-
-[[lean_exe]]
-name = "hash-docs"
-srcDir = "docs"
-root = "HashDocs.Main"
-leanOptions = { weak.linter.hashCommand = false, weak.linter.style.header = false }

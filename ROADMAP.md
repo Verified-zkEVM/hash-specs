@@ -12,7 +12,7 @@ Status: drafted 2026-10-11 as a plan; Phases 0–4 implemented by 2026-10-12. Ph
 1. **Faithful specs.** Each hash has a *reference* spec that transcribes its standard or paper line by line, with section-level citations.
 2. **Executable specs.** Each hash has a *fast* spec that runs on realistic inputs, plus a machine-checked proof that `fast = reference`.
 3. **Earned confidence.** The fast spec is checked against official known-answer tests (KATs) and fuzzed against at least two independent implementations in the wild.
-4. **Paper-quality documentation.** A Verso book with one chapter per hash, original diagrams of state, rounds and modes, and full citations.
+4. **Paper-quality documentation.** A Markdown README per hash family, with original diagrams of state, rounds and modes, an assurance table, and full citations. (Originally a Verso book; see decision 9 in §7.)
 5. **Ecosystem-compatible.** Same toolchain, conventions and field library (CompPoly) as Verified-zkEVM, so any project there can depend on these specs without friction. Migrating existing org specs is **deferred** (see §6).
 6. **CSLib-upstreamable in principle (secondary to goal 5).** The core spec library depends only on Mathlib and follows CSLib's conventions and layout, so it could later be contributed to CSLib's `Crypto` area with mostly mechanical changes. Nothing is upstreamed in v1 (see §6.2). Where CSLib compatibility conflicts with serving Verified-zkEVM, Verified-zkEVM wins.
 
@@ -27,7 +27,7 @@ Status: drafted 2026-10-11 as a plan; Phases 0–4 implemented by 2026-10-12. Ph
 - The repo aims to be adoptable as a canonical upstream, but v1 does **not** include migrating or bridging existing org specs. When migration happens, each project decides how to do it (and can build its own bridge, with our help if wanted).
 - The repo is designed for two futures, **in priority order**: (1) canonical specs for Verified-zkEVM repos; (2) upstreaming of the core to CSLib. CSLib-friendly choices are adopted when they cost Verified-zkEVM nothing, and dropped or postponed when they would get in its way (toolchain, dependencies, API shape, schedule). For now, all work happens in this repo.
 - Proofs use two layers plus an equivalence theorem.
-- Documentation is written in Verso.
+- Documentation is written in Markdown, one README per hash family (decision 9 in §7).
 
 ---
 
@@ -57,7 +57,6 @@ External Lean specs to cite, and possibly bridge to later:
 | Lean | We use **`v4.34.0`**, matching CompPoly, so that CompPoly's prebuilt release oleans and the Mathlib cache both work. (Latest stable is `v4.34.1`; `v4.35.0` is at rc4.) |
 | CompPoly | Latest tag `v4.34.0-patch2` (no `v4.34.1` tag yet), `fixedToolchain := true`. Fields include BN254, BLS12-381/377, BabyBear (+Ext4), KoalaBear, Goldilocks, Mersenne31, Pasta, Secp256k1. Each field has `Basic` and `Fast` representations. |
 | ArkLib | Lean `v4.34.0` |
-| Verso | Tag `v4.34.0` matches our toolchain. |
 | Lean module system | The org uses `module` / `public section` / `@[expose]` throughout. |
 | CSLib | `leanprover/cslib`, Apache-2.0. Toolchain `v4.35.0-rc4` (it tracks Lean closely), Mathlib pinned to a commit, **no other direct dependencies**; adding dependencies is "managed carefully" (`DECISION_MAKING.md`). Has a `Cslib/Crypto/` area (`Primitives/PRG`, `Protocols/…`) whose README plans "a comprehensive library of primitives … together with their proofs of correctness". Conventions: every file imports `Cslib.Init`; module system; Mathlib style plus `CODESTYLE.md` (term-mode `def`s, readable proofs, no non-terminal `simp`, curated `grind` sets as API); `lake build --wfail`; `lake shake`; `mk_all`; root `references.bib`; PR titles `feat(...)`; AI-tool use must be disclosed in PRs; major developments discussed on Zulip first. |
 
@@ -75,13 +74,13 @@ External Lean specs to cite, and possibly bridge to later:
   |---|---|---|---|---|
   | 1. Core specs | `Hash`, `HashTests` | **Mathlib only** (plus what Mathlib brings: Batteries, Plausible, Aesop) | Reference and fast specs written in pure Lean, `Equiv` proofs, spec properties, `grind` sets, generic field specs over Mathlib's `[Field F]` with `ZMod p` instances | CSLib `Crypto`; canonical specs for Verified-zkEVM |
   | 2. ZK integration | `HashZK` | Layer 1 + CompPoly (and possibly Hex later) | Fast field instances on CompPoly `Fast` types, ring isomorphisms to `ZMod p`, CompPoly-typed API | Stays here; serves Verified-zkEVM |
-  | 3. Tooling | `HashFFI`, `HashKAT`, `harness/`, `docs/` | anything | `@[export]` C entry points, full official KAT runs, Rust fuzzing, Verso book | Stays here permanently |
+  | 3. Tooling | `HashFFI`, `HashKAT`, `harness/`, `docs/` | anything | `@[export]` C entry points, full official KAT runs, Rust fuzzing, diagrams and research notes | Stays here permanently |
 
   - Layer 1 must never import layers 2 or 3. CI enforces this with an import check.
   - Downstream Verified-zkEVM repos can use Layer 1 alone, or Layer 2 if they want CompPoly types.
-  - *Later, not now:* Lake declares dependencies per package, so anyone depending on this package also fetches CompPoly and Verso. If that becomes a problem (for downstream users, or for the CSLib-compat build), the layers can be split into separate Lake packages in the same repo. The library boundaries above are what make that split easy.
+  - *Later, not now:* Lake declares dependencies per package, so anyone depending on this package also fetches CompPoly. If that becomes a problem (for downstream users, or for the CSLib-compat build), the layers can be split into separate Lake packages in the same repo. The library boundaries above are what make that split easy.
 - **Mathlib-free split, kept possible (decision 3 in §7).** Mathlib may be imported in Layer 1 for now. Files that don't need it (most byte-hash material) import only core and Batteries, and `lake shake` keeps imports minimal, so a Mathlib-free sub-library could be split off later without rewriting.
-- **Dependencies:** Mathlib (Layer 1); CompPoly (Layer 2); Verso, doc-gen4 and checkdecls (docs only).
+- **Dependencies:** Mathlib (Layer 1); CompPoly (Layer 2).
 - **Conventions (a superset of CSLib's and the org's):**
   - Module system in every file (`module`, `public section`, `@[expose]`).
   - A `Hash/Init.lean` that mirrors `Cslib.Init` (linter options and default tactics), imported by every Layer 1 file. On upstreaming it is replaced by `Cslib.Init`.
@@ -128,7 +127,7 @@ hash-specs/
 ├── HashKAT/                      # Layer 3: full official KAT runner (compiled executable)
 │   └── vectors/                       # vendored vectors, with provenance + licence README
 ├── harness/                           # Rust cargo workspace, see §4
-├── docs/                              # Verso book, see §3
+├── docs/                              # diagrams and research notes, see §3
 │   └── HashDocs/ (chapters), diagrams/ (TikZ/SVG sources)
 └── references.bib                     # repo root, CSLib-compatible keys
 ```
@@ -176,7 +175,9 @@ The last property caught a real bug in SymCrypt, so it gets a fast-layer streami
 
 ---
 
-## 3. Documentation: a Verso book
+## 3. Documentation
+
+*Changed 2026-10-27 (decision 9 in §7):* the Verso book was dropped. Each family's `README.md` (in its `Hash/` directory) is now the documentation, and carries the notation, specification, security notes, assurance table, file and theorem index, and references. The diagrams moved to `docs/diagrams/` beside their TikZ sources and are embedded in the READMEs. The chapter structure below is kept as the plan the READMEs were written to; the worked examples and the HTML/PDF site are not carried over.
 
 **Format:**
 - Verso `Manual` genre, published as an HTML site via GitHub Pages, with a PDF via Verso's TeX backend if it is mature enough. Phase 0 checks this.
@@ -204,7 +205,7 @@ The last property caught a real bug in SymCrypt, so it gets a fast-layer streami
 **Citations:**
 - One `references.bib` at the repo root, with keys chosen to merge cleanly into CSLib's root `references.bib`. Primary sources first: NIST FIPS 180-4 and 202, RFC 7693, the BLAKE3 spec, the Poseidon and Poseidon2 papers (USENIX Sec 2021; AFRICACRYPT 2023), the Rescue-Prime ePrint, the MiMC paper (ASIACRYPT 2016), and the EIP-152 text.
 - Each entry includes a DOI or a stable URL and an access date.
-- Reference-layer docstrings cite by section number and must stand on their own, because the Verso book would not go to CSLib. Verso's bibliography support is checked in Phase 0; the fallback is a small citation extension.
+- Reference-layer docstrings cite by section number and must stand on their own, because the READMEs would not go to CSLib.
 
 ---
 
@@ -393,7 +394,7 @@ Migration happens when the Verified-zkEVM colleagues judge it appropriate, and e
 
 ### 6.2 Upstreaming the core to CSLib (secondary)
 
-Only Layer 1 (`Hash`, `HashTests`) is a candidate. CompPoly integration, FFI, the Rust harness, full KAT runs and the Verso book stay here.
+Only Layer 1 (`Hash`, `HashTests`) is a candidate. CompPoly integration, FFI, the Rust harness, full KAT runs and the READMEs stay here.
 
 - **What makes it mechanical:** the namespace mapping in §2.2, `Hash.Init` mirroring `Cslib.Init`, identical linters and style, Mathlib-only dependencies, a merge-ready `references.bib`, and the CSLib-compat CI job.
 - **Remaining work at that point:**
@@ -419,8 +420,9 @@ Settled on 2026-10-11. These are the defaults proposed earlier, accepted, with d
 4. **RIPEMD-160.** Include it, since it's small. It's an EVM precompile and `evm-asm` already has a copy.
 5. **Poseidon and Poseidon2 instances.** The instances real targets use: circomlib, Plonky3, leanSpec, HorizenLabs. Adjust if verified-zkevm.org priorities point elsewhere.
 6. **Pedersen curve strategy.** Abstract group first, concrete curves when available.
-7. **PDF output.** HTML site first; PDF only if Verso's TeX backend is adequate.
+7. **PDF output.** HTML site first; PDF only if Verso's TeX backend is adequate. *Superseded by decision 9.*
 8. **SP 800-185 (cSHAKE, KMAC, TupleHash, ParallelHash).** Deferred to after v1.
+9. **Documentation format** (*decided 2026-10-27*). Drop the Verso book: it was a heavy dependency for every downstream user, and it duplicated the per-family READMEs. Each family's README is the documentation, with the book's assurance tables and diagrams folded in.
 
 ---
 
@@ -433,7 +435,6 @@ Settled on 2026-10-11. These are the defaults proposed earlier, accepted, with d
 | `Equiv` proofs over many rounds or large states blow up `bv_decide` or elaboration. | Per-round lemmas plus induction. Avoid unfolding whole permutations. Never fall back to `native_decide` in the trust chain. |
 | Correlated oracles, for example XKCP-derived Keccak implementations, hide the same bug. | Record the lineage of each oracle and require one independent implementation per hash. Official KATs act as a third source. |
 | ZK hashes are underspecified: "Poseidon" names many incompatible variants. | Explicit instance naming, parameter provenance (repo and commit), and generating constants instead of pasting them. |
-| Verso API churn or immature features (citations, TeX). | Pin Verso with the toolchain. Keep diagram sources format-agnostic (TikZ/SVG). Have small local extensions ready. |
 | Copyright of diagrams and of text quoted from papers. | Original diagrams only. Quote only short spans, with citations. |
 | Licences of vendored test vectors and constants. Some sources are under copyleft licences: for example circomlib is LGPL-3.0 and circomlibjs is GPL-3.0, while Plonky3, HorizenLabs' Poseidon2 and `light-poseidon` are Apache-2.0 and leanSpec is MIT. | Record each vendored file's licence in the provenance README. Prefer generating constants (Grain LFSR) over copying them. Use copyleft tools only as external oracles run as subprocesses, never vendored into the Apache-2.0 tree. |
 | Trusted computing base of the testing itself: the Lean compiler and runtime, and the C toolchain. | State it in the docs. The `Equiv` proofs are kernel-checked, and only the fast-layer execution relies on the compiler. |
@@ -452,6 +453,6 @@ A hash is **done** when:
 - [ ] All official KATs pass in CI, from vendored vectors with recorded provenance.
 - [ ] It is fuzzed against at least 2 independent oracles, past the fuzz budget, with no open divergences.
 - [ ] Streaming-vs-one-shot (and XOF prefix consistency, where relevant) is proved or tested.
-- [ ] It has a Verso chapter covering every §3 section, with original diagrams and a worked example.
+- [ ] It has a README covering the §3 sections, with original diagrams and an assurance table.
 - [ ] The build has zero warnings.
 - [ ] Its Layer 1 files pass CSLib's linters and style rules. (The CSLib-compat CI job is advisory: a failure there is tracked, but it doesn't block a hash from being done.)

@@ -97,6 +97,8 @@ The first eight words are the next chaining value; all sixteen are used only by 
 output [BLAKE3, §2.2, §2.6]. The Lean reference reuses `Hash.BLAKE2.Reference.round` with the
 BLAKE2s parameters and round index 0, whose `SIGMA[0]` is the identity.
 
+![The BLAKE3 compression function](../../docs/diagrams/blake3-compress.svg)
+
 ## Chunks
 
 The input is split into chunks of 1024 bytes, the last possibly shorter; an empty input is a
@@ -115,6 +117,8 @@ compression, unless the chunk is the root (a single-chunk input), see below.
 
 In Lean the node is the structure `Output` (`cv`, `block`, `counter`, `blockLen`, `flags`):
 the compression is deferred because the root is compressed differently.
+
+![A BLAKE3 chunk](../../docs/diagrams/blake3-chunk.svg)
 
 ## The tree
 
@@ -161,6 +165,10 @@ merges one subtree per trailing 1-bit of $k$ (`merge_blocks`). At the end, the s
 merged from the smallest; each subtree is larger than everything to its right, so each merge
 is a node of the tree defined by the `leftLeaves` rule (`finish_blocks`).
 
+![BLAKE3 tree shapes](../../docs/diagrams/blake3-tree.svg)
+
+![The chaining-value stack](../../docs/diagrams/blake3-stack.svg)
+
 ## Output (XOF)
 
 The root node $(c, B, t, b, d)$ is expanded by compressing it with `ROOT` set and the counter
@@ -172,6 +180,8 @@ $$\mathrm{out}(\ell) = \mathrm{first}_{\ell\ \text{bytes}}\Bigl(\mathrm{LE}\bigl
 The output stream does not depend on $\ell$, so a shorter output is a prefix of a longer one
 (`blake3Xof_prefix`). The specification bounds the output at $2^{64}$ bytes; the Lean
 definitions take any $\ell$ and reduce the counter modulo $2^{64}$.
+
+![BLAKE3 extendable output](../../docs/diagrams/blake3-xof.svg)
 
 ## Modes
 
@@ -204,6 +214,23 @@ These notes summarise the specification; this directory proves no security prope
 - **Length extension.** Only the root sets `ROOT`, so an output cannot be extended into the
   output of a longer input [BLAKE3, §4.3].
 
+## Assurance
+
+The evidence that the Lean specification is the BLAKE3 of its specification, as of
+2026-10-12:
+
+| Evidence | Status |
+|----------|--------|
+| Reference transcription | `Hash.BLAKE3.Reference` and `Hash.Construction.Tree`, each definition citing its section of the specification. |
+| Constants | The IV is the BLAKE2s IV, proved equal to the SHA-256 initial hash value. |
+| Fast = reference | Proved for all three modes with every output length (`Hash.BLAKE3.blake3Xof_eq`, `Hash.BLAKE3.blake3Keyed_eq` for 32-byte keys, `Hash.BLAKE3.blake3DeriveKey_eq`). The axiom audit shows only `propext`, `Classical.choice` and `Quot.sound`. |
+| Streaming = one-shot | Proved for every key, mode, output length and split of the input (`Hash.BLAKE3.Fast.State.finalize_updates`), from the generic theorem that the chaining-value stack computes the tree (`Hash.Tree.finish_pushAll`). Shorter outputs are proved to be prefixes of longer ones (`Hash.BLAKE3.blake3Xof_prefix`). |
+| Known-answer tests | All 35 cases of the BLAKE3 team's `test_vectors.json` pass in all three modes, at the full 131 bytes and at 32 bytes, one-shot and through the streaming interface in eight splitting patterns (`lake exe hash-kat`). Kernel-checked examples cover the three modes on the empty input and `hash` on 1 and 65 bytes. |
+| Differential testing | Every input length up to 2049 bytes and a sample up to 16 KiB, output lengths around the 64-byte blocks, a 1 MiB input, random inputs, keys, contexts and streaming splits agree with the `blake3` crate and the BLAKE3 team's reference implementation. |
+| Fuzzing | Two `cargo-fuzz` targets (all modes one-shot, and streaming); no divergence has been found. The roadmap's budget of $10^9$ executions per oracle has not yet been reached. |
+| Other formal specifications | `clean` (Verified-zkEVM) has a Lean 4 specification of BLAKE3 with circuit gadgets (informational; see `LIT-REVIEW.md`). |
+| Known deviations | `Hash.blake3DeriveKey` takes the context string as bytes; the specification intends a hard-coded string, which the caller encodes as UTF-8. |
+
 ## In this directory
 
 | File | Contents |
@@ -233,9 +260,8 @@ Main theorems:
 | `Hash.blake3Init_eq`, `Hash.blake3KeyedInit_eq`, `Hash.blake3DeriveKeyInit_eq` | The same for the three byte-level modes. |
 
 The BLAKE2s round equivalence used by `compress_eq` is `Hash.BLAKE2.Equiv.round_eq`; the IV is
-proved equal to the SHA-256 initial hash value in `Hash.BLAKE2.Constants` (`blake2s_IV`). The
-Verso chapter `docs/HashDocs/BLAKE3.lean` traces a two-chunk example and lists the testing
-evidence (known-answer tests, differential testing, fuzzing).
+proved equal to the SHA-256 initial hash value in `Hash.BLAKE2.Constants` (`blake2s_IV`). The testing
+evidence (known-answer tests, differential testing, fuzzing) is under [Assurance](#assurance).
 
 ## References
 

@@ -23,6 +23,8 @@ Messages, words and digests follow the data model of [FIPS 180-4, §2.1, §3.1].
   first, so `0x61` is `01100001`. Words are big-endian: the first bit (or byte) of a word is its
   most significant. Integers such as the message length are written big-endian too [FIPS 180-4, §3.1].
 
+![Bytes, bits and words in SHA-2](../../docs/diagrams/sha2-data-model.svg)
+
 ## Parameters
 
 | Member      | $w$ | Block $m$ | Length field | Rounds | Digest | $H^{(0)}$ |
@@ -97,6 +99,8 @@ specification pads bytewise (`Fast.pad`). That the two paddings agree is
 $M^{(1)}, \dots, M^{(N)}$ of $m$ bits, and each block into sixteen big-endian words
 $M^{(i)}_0, \dots, M^{(i)}_{15}$ (`Reference.parse`).
 
+![SHA-256 padding](../../docs/diagrams/sha2-padding.svg)
+
 ## The compression function
 
 The compression function maps a hash value $H^{(i-1)}$ (eight words) and a block $M^{(i)}$ to
@@ -138,6 +142,10 @@ $j = 0, \dots, 7$, where $v_0, \dots, v_7$ are the final $a, \dots, h$. Each rou
 given $W_t$; the feed-forward is what prevents the compression function from being inverted by
 running the rounds backwards.
 
+![The SHA-2 message schedule](../../docs/diagrams/sha2-schedule.svg)
+
+![One round of the SHA-2 compression function](../../docs/diagrams/sha2-round.svg)
+
 ## The hash
 
 **Iteration** [FIPS 180-4, §6.2.2, §6.4.2]. Starting from the member's $H^{(0)}$,
@@ -155,6 +163,8 @@ $d$ is the digest length (`Params.digestBits`). SHA-256 and SHA-512 output the w
 value. SHA-224 outputs the first seven words of $H^{(N)}$, SHA-384 the first six, SHA-512/256 the
 first four, and SHA-512/224 the first three and a half (224 bits). The truncated members differ
 from their parents only in $H^{(0)}$ and $d$.
+
+![The Merkle–Damgård iteration](../../docs/diagrams/sha2-md.svg)
 
 ## Security notes
 
@@ -176,6 +186,21 @@ This section summarises the cited literature; this directory proves no security 
 - **Implementations.** The fast specification is a specification, not a constant-time
   production implementation. For a machine-checked proof that a production implementation
   (OpenSSL's SHA-256) meets FIPS 180-4, see Appel [Appel 2015].
+
+## Assurance
+
+The evidence that the Lean specification is the SHA-2 of FIPS 180-4, as of 2026-10-12:
+
+| Evidence | Status |
+|----------|--------|
+| Reference transcription | `Hash.SHA2.Reference`, every definition citing its section of FIPS 180-4. |
+| Constants | All tables proved equal to their derivations, including the SHA-512/t IV generation (`Hash.SHA2.K256_eq`, `Hash.SHA2.initialHash512t224_eq` and others). |
+| Fast = reference | Proved for all six members: `Hash.SHA2.sha224_eq` to `Hash.SHA2.sha512t256_eq`, from the generic `Hash.SHA2.Equiv.hashWith_eq`. Streaming equals one-shot for every way of splitting the message (`Hash.SHA2.Fast.State.finalize_updates`, and `Hash.sha256Init_eq` and so on for the byte-level API). The axiom audit (`HashTests/Axioms.lean`) shows only `propext`, `Classical.choice` and `Quot.sound`. |
+| Known-answer tests | All 1886 NIST CAVP SHAVS vectors (short messages, long messages and Monte Carlo) for all six members pass, and the 1286 message vectors pass again through the streaming interface in five splitting patterns (`lake exe hash-kat`). Eleven examples are also checked by the kernel. |
+| Differential testing | Every message length up to 385 bytes, a 1 MiB message, random messages and random streaming splits agree with RustCrypto `sha2` and AWS-LC. |
+| Fuzzing | Two `cargo-fuzz` targets (one-shot and streaming) against RustCrypto `sha2` and AWS-LC, run nightly in CI; no divergence has been found. The roadmap's budget of $10^9$ executions per oracle has not yet been reached. |
+| Other formal specifications | Coq [Appel 2015], F* (HACL*), Isabelle (AFP `Crypto_Standards`), Cryptol, ACL2, and the Lean specifications of the SymCrypt/Aeneas and OpenVM projects (informational; see `LIT-REVIEW.md`). |
+| Known deviations | The fast specification takes byte strings, so messages whose length is not a multiple of 8 bits are covered only by the reference specification. |
 
 ## In this directory
 
