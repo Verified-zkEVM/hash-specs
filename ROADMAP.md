@@ -33,7 +33,7 @@ Status: drafted 2026-10-11 as a plan; Phases 0–4 implemented by 2026-10-12. Ph
 
 ## 1. Landscape: what already exists in the org
 
-Measured on 2026-10-11 from each repo's `HEAD`. It is context for later adoption, not v1 work. It also tells us which representations (for example `Nat` lanes versus `UInt64`) downstream users expect, which informs API design.
+Measured on 2026-10-11 from each repo's `HEAD`. A fuller survey (2026-10-27), including repos added since, with per-repo plans, is in [`docs/upstreaming/`](docs/upstreaming/README.md); where they differ, it supersedes this table. It is context for later adoption, not v1 work. It also tells us which representations (for example `Nat` lanes versus `UInt64`) downstream users expect, which informs API design.
 
 | Hash | Existing Lean spec(s) in Verified-zkEVM | Notes |
 |---|---|---|
@@ -383,7 +383,7 @@ Migration happens when the Verified-zkEVM colleagues judge it appropriate, and e
   - Representation adapters (`Nat` lanes versus `UInt64`, `Vector` versus `ByteArray`) are stated and proved as lemmas. We can provide the common ones in `Hash`.
 - **Bridges are evidence for both sides.** If a bridge can't be proved, someone has a bug, and the differential harness can show which side it is.
 - **We can help** by pairing on bridges, adding conversion lemmas, or adding instances a project needs.
-- **Upstreaming record (to do at some point, at the latest in Phase 6).** Keep a local record of everything each relevant repo (`clean`, `VCVio`, `zkLean`, `ArkLib`, `leanerVM`, `evm-asm`, …) would need in order to upstream, so that when a project is ready the work is already scoped. For example, one file per repo under `docs/upstreaming/<repo>.md`, listing:
+- **Upstreaming record (written 2026-10-27: [`docs/upstreaming/`](docs/upstreaming/README.md)).** Keep a local record of everything each relevant repo (`clean`, `VCVio`, `zkLean`, `ArkLib`, `leanerVM`, `evm-asm`, …) would need in order to upstream, so that when a project is ready the work is already scoped. For example, one file per repo under `docs/upstreaming/<repo>.md`, listing:
   - which of its specs overlap ours (file paths, pinned to a commit) and which `Hash` definitions replace them
   - the representation differences, and the conversion lemmas needed to bridge them
   - the proposed bridge theorem statements
