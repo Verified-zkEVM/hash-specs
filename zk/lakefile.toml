@@ -9,6 +9,11 @@ defaultTargets = ["HashZK", "HashZKTests"]
 # Share the core package's dependency checkouts (the pins are the same) instead of a second copy
 # of Mathlib.
 packagesDir = "../.lake/packages"
+# Prebuilt oleans for downstream projects that pin a release tag, as for the core package.
+preferReleaseBuild = true
+releaseRepo = "https://github.com/Verified-zkEVM/hash-specs"
+buildArchive = "hash-specs-zk-oleans.tar.gz"
+fixedToolchain = true
 
 # The same options as the core package.
 [leanOptions]
@@ -43,6 +48,7 @@ rev = "v4.35.0"
 # Layer 2: CompPoly-backed fast field arithmetic for the ZK-friendly hashes.
 [[lean_lib]]
 name = "HashZK"
+platformIndependent = true
 
 # Layer 2 tests: the axiom audit of the Layer 2 theorems.
 [[lean_lib]]

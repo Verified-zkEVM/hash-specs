@@ -3,6 +3,16 @@ version = "0.1.0"
 defaultTargets = ["Hash", "HashTests"]
 testDriver = "HashTests"
 lintDriver = "batteries/runLinter"
+# Downstream projects that pin a release tag fetch prebuilt oleans from the GitHub release
+# instead of compiling the library, as for CompPoly. Lake does this only for a package consumed as
+# a dependency, never for the root package. The archive is built and attached by
+# `.github/workflows/release.yml`.
+preferReleaseBuild = true
+releaseRepo = "https://github.com/Verified-zkEVM/hash-specs"
+# One archive for every platform; see `platformIndependent` on `Hash` below.
+buildArchive = "hash-specs-oleans.tar.gz"
+# A release supports only the toolchain it was built with.
+fixedToolchain = true
 
 # Linter options mirror CSLib's `lakefile.toml` (see ROADMAP.md §2.1), plus `autoImplicit = false`.
 # They are `weak.` so that files which do not import Mathlib (the Mathlib-free part of Layer 1)
@@ -28,6 +38,9 @@ rev = "v4.35.0"
 # Layer 1: the core specifications. Mathlib-only; see `scripts/check_layers.py`.
 [[lean_lib]]
 name = "Hash"
+# Release archives are built on Linux CI and used on every platform, so leave platform-dependent
+# elements out of the module traces.
+platformIndependent = true
 
 # Layer 1 tests: small kernel-checked known-answer tests and properties (upstreamable).
 [[lean_lib]]

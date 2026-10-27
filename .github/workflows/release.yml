@@ -1,18 +1,35 @@
-name: Lean release tag
+name: Lean release tag and prebuilt oleans
 
 # Each toolchain bump on `main` gets a release named after the toolchain (for example `v4.35.0`),
 # as CompPoly does, so downstream projects can pin `rev = "v4.35.0"`. Later fixes on the same
 # toolchain are released by hand as `v4.35.0-patch1`, `v4.35.0-patch2`, ….
+#
+# Every release then gets the prebuilt oleans of both packages, which Lake fetches for a
+# dependency pinned to a release tag (`preferReleaseBuild` in both lakefiles):
+# `hash-specs-oleans.tar.gz` (the core library `Hash`) and `hash-specs-zk-oleans.tar.gz`
+# (`HashZK`).
 on:
   push:
     branches:
       - main
     paths:
       - lean-toolchain
+  # Releases created by hand (patch tags). The release that `lean-release-tag` creates below uses
+  # `GITHUB_TOKEN`, which does not trigger workflows, so this cannot fire twice for a bump.
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build and attach prebuilt oleans to.
+        required: true
+        type: string
 
 jobs:
   lean-release-tag:
     name: Add Lean release tag
+    # On a release event or a manual run the tag and release already exist.
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -23,3 +40,79 @@ jobs:
         with:
           do-release: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-oleans:
+    name: Publish prebuilt oleans
+    needs: lean-release-tag
+    if: >-
+      always() &&
+      (needs.lean-release-tag.result == 'success' || needs.lean-release-tag.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      # `lean-release-tag` puts the tag on the commit that changed `lean-toolchain`, which need not
+      # be this push's HEAD, so build from the tag itself.
+      - name: Resolve the release tag
+        id: resolve
+        run: |
+          case "${{ github.event_name }}" in
+            workflow_dispatch) tag='${{ inputs.tag }}' ;;
+            release)           tag='${{ github.event.release.tag_name }}' ;;
+            *)                 tag="$(sed -n 's|^leanprover/lean4:||p' lean-toolchain | tr -d '[:space:]')" ;;
+          esac
+          [ -n "$tag" ] || { echo "::error::could not resolve a release tag"; exit 1; }
+          git fetch --tags --force --quiet
+          git rev-parse -q --verify "refs/tags/$tag" >/dev/null \
+            || { echo "::error::tag '$tag' does not exist"; exit 1; }
+          git checkout --quiet "refs/tags/$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      # `lake upload` runs `gh release upload`, which needs the release to exist.
+      - name: Check the release exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "${{ steps.resolve.outputs.tag }}" >/dev/null \
+            || { echo "::error::no GitHub release for tag '${{ steps.resolve.outputs.tag }}'"; exit 1; }
+
+      - name: Free disk space (Mathlib's cache does not fit otherwise)
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+
+      # After the tag checkout, so that elan uses the tag's `lean-toolchain`.
+      - uses: leanprover/lean-action@v1
+        with:
+          auto-config: false
+          build: false
+          test: false
+          lint: false
+          use-github-cache: false
+          use-mathlib-cache: true
+
+      # Only the libraries downstream projects import, each into an empty build directory:
+      # `lake upload` packs the whole build directory.
+      - name: Build `Hash` and `HashZK`
+        run: |
+          rm -rf .lake/build zk/.lake/build
+          lake build Hash
+          cd zk && lake build HashZK
+
+      - name: Attach the archives
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          lake upload "${{ steps.resolve.outputs.tag }}"
+          cd zk && lake upload "${{ steps.resolve.outputs.tag }}"
+
+      - name: Report the archives
+        run: |
+          {
+            echo "### Prebuilt oleans for \`${{ steps.resolve.outputs.tag }}\`"
+            for a in .lake/hash-specs-oleans.tar.gz zk/.lake/hash-specs-zk-oleans.tar.gz; do
+              echo "- \`$(basename "$a")\`: $(du -h "$a" | cut -f1), $(tar tzf "$a" | grep -c '\.olean$') \`.olean\` files"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
