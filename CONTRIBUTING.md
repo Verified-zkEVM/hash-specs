@@ -23,6 +23,13 @@ rationale are in [`ROADMAP.md`](ROADMAP.md).
 
 The toolchain is pinned to CompPoly's (`lean-toolchain`). Keep the build at **zero warnings**.
 
+**Releases.** Pushing a change of `lean-toolchain` to `main` tags that commit with the toolchain
+version and releases it (`.github/workflows/release.yml`). Fixes on the same toolchain are released
+by hand as `v4.35.0-patch1`, `v4.35.0-patch2`, … (`gh release create <tag> --target <commit>`).
+Every release gets prebuilt oleans of `Hash` and `HashZK` attached by the same workflow, which
+downstream projects pinning the tag download instead of compiling; to rebuild or backfill an
+archive, run the workflow by hand with the tag.
+
 ## Layers
 
 The repository has three layers of libraries (ROADMAP.md §2.1), in two Lake packages:
