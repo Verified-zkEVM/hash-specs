@@ -18,7 +18,7 @@ public import HashZK
 # Known-answer test runner
 
 Runs the full official test suites against the fast specifications. The vectors are vendored in
-`HashKAT/vectors/` (see the README there for their provenance). Run from the repository root:
+`HashKAT/vectors/` (see the README there for their provenance). Run from the `zk` package directory:
 
 ```
 lake exe hash-kat

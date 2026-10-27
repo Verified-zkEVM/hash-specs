@@ -74,7 +74,7 @@ def main() -> None:
         f"- Machine: {cpu_name()}, {platform.system()} {platform.machine()}",
         "- Command: `cargo bench --bench throughput` in `harness/hash-lean`, then",
         "  `python3 harness/scripts/bench_report.py`",
-        "- Lean is called in-process through the C exports in `HashFFI/Export.lean`, so the",
+        "- Lean is called in-process through the C exports in `zk/HashFFI/Export.lean`, so the",
         "  numbers include copying the message into a Lean `ByteArray`.",
         "- \"× Lean\" is how many times faster than the Lean fast specification each",
         "  implementation is.",

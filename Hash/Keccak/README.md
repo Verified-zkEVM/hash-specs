@@ -250,7 +250,7 @@ multiple of 8 bits are covered only by the reference. The equivalence is proved 
 rates 72, 104, 136, 144, 168 bytes (`Equiv.Rate`). The streaming interface is proved equal to
 the one-shot functions for every positive rate (its invariant: the state has absorbed the first
 $c$ whole blocks of the message so far and buffers the rest, fewer than one block), and also
-tested against them on the NIST CAVP vectors split at several points (`HashKAT/`) and by fuzzing
+tested against them on the NIST CAVP vectors split at several points (`zk/HashKAT/`) and by fuzzing
 (`harness/`).
 
 ## References

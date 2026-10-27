@@ -1,4 +1,4 @@
-/.lake
+.lake/
 /harness/target
 /harness/fuzz/target
 /harness/fuzz/artifacts

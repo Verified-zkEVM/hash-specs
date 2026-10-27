@@ -38,6 +38,7 @@ jobs:
           test: false
           lint: false
       - name: Build the Lean static libraries
+        working-directory: zk
         run: lake build HashFFI:static Hash:static HashZK:static +CompPoly.Fields.Montgomery.Native64x8Defs:o
       # Pinned: the nightly of 2026-10-11 crashes (an internal compiler error) compiling
       # Plonky3's p3-monty-31 with the fuzzing flags.

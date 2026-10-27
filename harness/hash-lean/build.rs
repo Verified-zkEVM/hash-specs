@@ -9,17 +9,21 @@ use std::{env, path::PathBuf, process::Command};
 /// The Lake target building CompPoly's zero-import Montgomery arithmetic, which `HashZK.Raw` uses.
 const COMPPOLY_FACET: &str = "+CompPoly.Fields.Montgomery.Native64x8Defs:o";
 /// The object file it produces.
+/// The `zk` package shares the core package's dependency checkouts (`packagesDir`).
 const COMPPOLY_OBJECT: &str =
     ".lake/packages/CompPoly/.lake/build/ir/CompPoly/Fields/Montgomery/Native64x8Defs.c.o.export";
 
 fn main() {
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let root = manifest.join("../..").canonicalize().expect("repository root");
+    // The Lean libraries are built from the `zk` package, which depends on the core package in
+    // the repository root; Lake builds each package's libraries in its own `.lake/build`.
+    let zk = root.join("zk");
 
     if env::var_os("HASH_LEAN_SKIP_LAKE").is_none() {
         let status = Command::new("lake")
             .args(["build", "HashFFI:static", "Hash:static", "HashZK:static", COMPPOLY_FACET])
-            .current_dir(&root)
+            .current_dir(&zk)
             .status()
             .expect("failed to run `lake`; is elan installed?");
         assert!(status.success(), "`lake build` failed");
@@ -38,6 +42,7 @@ fn main() {
         .opt_level(2)
         .compile("hash_lean_shim");
 
+    println!("cargo:rustc-link-search=native={}", zk.join(".lake/build/lib").display());
     println!("cargo:rustc-link-search=native={}", root.join(".lake/build/lib").display());
     println!("cargo:rustc-link-search=native={}", prefix.join("lib/lean").display());
     println!("cargo:rustc-link-search=native={}", prefix.join("lib").display());
@@ -58,8 +63,8 @@ fn main() {
 
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
     let lean_libs = [
-        "hash_x2dspecs_HashFFI",
-        "hash_x2dspecs_HashZK",
+        "hash_x2dspecs_x2dzk_HashFFI",
+        "hash_x2dspecs_x2dzk_HashZK",
         "hash_x2dspecs_Hash",
         "hash_comppoly",
         "Init",
@@ -73,6 +78,7 @@ fn main() {
         // runtime is built against the static libc++ shipped in the toolchain's `lib`, not the
         // system's libstdc++.
         let dirs = [
+            zk.join(".lake/build/lib"),
             root.join(".lake/build/lib"),
             out.clone(),
             prefix.join("lib/lean"),
@@ -106,13 +112,14 @@ fn main() {
 
     for dir in [
         "Hash",
-        "HashFFI",
-        "HashZK",
         "Hash.lean",
-        "HashFFI.lean",
-        "HashZK.lean",
         "lakefile.toml",
         "lean-toolchain",
+        "zk/HashFFI",
+        "zk/HashZK",
+        "zk/HashFFI.lean",
+        "zk/HashZK.lean",
+        "zk/lakefile.toml",
     ] {
         println!("cargo:rerun-if-changed={}", root.join(dir).display());
     }

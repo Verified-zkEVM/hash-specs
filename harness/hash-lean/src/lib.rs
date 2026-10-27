@@ -1,7 +1,7 @@
 //! In-process bindings to the fast Lean specifications of the `Hash` library.
 //!
 //! The Lean functions are compiled by Lake into a static library and exported under C names
-//! (see `HashFFI/Export.lean`). This crate links that library together with the Lean runtime
+//! (see `zk/HashFFI/Export.lean`). This crate links that library together with the Lean runtime
 //! and exposes each hash as a safe Rust function on byte slices. It exists for differential
 //! testing against independent implementations, and for benchmarking.
 

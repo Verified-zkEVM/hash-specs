@@ -7,6 +7,8 @@
    repository or CompPoly import Mathlib, Batteries, Aesop, Qq, Plausible or `Hash.Init`. It is linked into the
    Rust harness as a static library, and must stay small.
 3. Layer 1 contains no `sorry`, `admit`, `native_decide` or `axiom` declarations.
+4. The `zk` package pins the same toolchain and Mathlib revision as the core package, whose
+   `.lake/packages` it shares.
 
 Exits non-zero, with a message per violation, if any rule is broken.
 """
@@ -31,13 +33,16 @@ def strip_comments(src: str) -> str:
     return re.sub(r"--[^\n]*", "", src)
 
 
+# Source roots of the two packages: the core package (the repository root) and the `zk` package.
+SOURCE_ROOTS = [ROOT, ROOT / "zk"]
 # Package sources whose modules the HashFFI closure may reach (CompPoly's zero-import runtime
-# definitions), searched after the repository.
+# definitions), searched after the repository. The `zk` package keeps its dependencies in the core
+# package's `.lake/packages`.
 PACKAGE_ROOTS = [ROOT / ".lake" / "packages" / "CompPoly"]
 
 
 def module_file(mod: str) -> pathlib.Path | None:
-    for base in [ROOT, *PACKAGE_ROOTS]:
+    for base in [*SOURCE_ROOTS, *PACKAGE_ROOTS]:
         path = base / (mod.replace(".", "/") + ".lean")
         if path.exists():
             return path
@@ -58,6 +63,19 @@ def top(mod: str) -> str:
 
 def main() -> int:
     errors: list[str] = []
+    # The zk package shares the core package's `.lake/packages`, so the pins must agree.
+    if (ROOT / "zk" / "lean-toolchain").read_text() != (ROOT / "lean-toolchain").read_text():
+        errors.append("zk/lean-toolchain differs from lean-toolchain")
+    mathlib_rev = re.compile(r'name = "mathlib"\n(?:[^\[\n]*\n)*?rev = "([^"]*)"')
+    core_rev = mathlib_rev.search((ROOT / "lakefile.toml").read_text())
+    zk_rev = mathlib_rev.search((ROOT / "zk" / "lakefile.toml").read_text())
+    if not core_rev or not zk_rev or core_rev.group(1) != zk_rev.group(1):
+        errors.append("zk/lakefile.toml must pin the same Mathlib revision as lakefile.toml")
+    missing = [p for p in PACKAGE_ROOTS if not p.is_dir()]
+    if missing:
+        print(f"{missing[0]} not found: build the zk package first (`cd zk && lake build`)",
+              file=sys.stderr)
+        return 1
     layer1 = [p for d in LAYER1_DIRS for p in (ROOT / d).rglob("*.lean")] + [ROOT / "Hash.lean"]
 
     for path in layer1:

@@ -78,7 +78,7 @@ External Lean specs to cite, and possibly bridge to later:
 
   - Layer 1 must never import layers 2 or 3. CI enforces this with an import check.
   - Downstream Verified-zkEVM repos can use Layer 1 alone, or Layer 2 if they want CompPoly types.
-  - *Later, not now:* Lake declares dependencies per package, so anyone depending on this package also fetches CompPoly. If that becomes a problem (for downstream users, or for the CSLib-compat build), the layers can be split into separate Lake packages in the same repo. The library boundaries above are what make that split easy.
+  - *Done 2026-10-27:* Lake declares dependencies per package, so anyone depending on a single package also fetched CompPoly. The layers are now two Lake packages in the same repo: the core `hash-specs` (Layer 1, Mathlib only) at the root, and `hash-specs-zk` in `zk/` (Layers 2 and 3's Lean libraries), which requires the core by path and CompPoly, and shares the core's `.lake/packages`. Downstream projects that need only Layer 1 require `hash-specs` and never fetch CompPoly.
 - **Mathlib-free split, kept possible (decision 3 in §7).** Mathlib may be imported in Layer 1 for now. Files that don't need it (most byte-hash material) import only core and Batteries, and `lake shake` keeps imports minimal, so a Mathlib-free sub-library could be split off later without rewriting.
 - **Dependencies:** Mathlib (Layer 1); CompPoly (Layer 2).
 - **Conventions (a superset of CSLib's and the org's):**
@@ -122,13 +122,14 @@ hash-specs/
 │   │   └── Pedersen/ (blocked on curves; optional, see §5 Phase 5)
 ├── HashTests/                    # Layer 1 tests: small decide-based KAT subset, Plausible
 │                                      #   properties (CSLib-style, upstreamable)
-├── HashZK/                       # Layer 2: CompPoly fast fields, ring isos to ZMod p
-├── HashFFI/Export.lean           # Layer 3: @[export] C-ABI entry points for the harness
-├── HashKAT/                      # Layer 3: full official KAT runner (compiled executable)
-│   └── vectors/                       # vendored vectors, with provenance + licence README
+├── zk/                                # package `hash-specs-zk` (Layers 2 and 3), requires the root by path
+│   ├── HashZK/                        # Layer 2: CompPoly fast fields, ring isos to ZMod p
+│   ├── HashFFI/Export.lean            # Layer 3: @[export] C-ABI entry points for the harness
+│   └── HashKAT/                       # Layer 3: full official KAT runner (compiled executable)
+│       └── vectors/                   # vendored vectors, with provenance + licence README
 ├── harness/                           # Rust cargo workspace, see §4
 ├── docs/                              # diagrams and research notes, see §3
-│   └── HashDocs/ (chapters), diagrams/ (TikZ/SVG sources)
+│   └── diagrams/ (TikZ sources and SVGs), research/
 └── references.bib                     # repo root, CSLib-compatible keys
 ```
 

@@ -12,8 +12,9 @@ rationale are in [`ROADMAP.md`](ROADMAP.md).
 | Build the library (warnings are errors in CI) | `lake build --wfail Hash` |
 | Kernel-checked tests and the axiom audit | `lake build --wfail HashTests` |
 | Environment linters | `lake lint` |
-| Layering and hygiene checks | `python3 scripts/check_layers.py` |
-| Full known-answer test suites | `lake exe hash-kat` |
+| Layering and hygiene checks (after building the zk package) | `python3 scripts/check_layers.py` |
+| Build the zk package (Layers 2 and 3) | `cd zk && lake build --wfail HashZK HashZKTests HashFFI hash-kat` |
+| Full known-answer test suites | `cd zk && lake exe hash-kat` |
 | Differential tests against other implementations | `cd harness/hash-lean && cargo test --release` |
 | Fuzzing (one target) | `cd harness/fuzz && cargo +nightly fuzz run sha2` |
 | Benchmarks (a record only, see `harness/BENCHMARKS.md`) | `cd harness/hash-lean && cargo bench`, then `python3 harness/scripts/bench_report.py` |
@@ -24,14 +25,20 @@ The toolchain is pinned to CompPoly's (`lean-toolchain`). Keep the build at **ze
 
 ## Layers
 
-The repository is one Lake package with three layers of libraries (ROADMAP.md §2.1):
+The repository has three layers of libraries (ROADMAP.md §2.1), in two Lake packages:
 
-1. **Core specifications**: `Hash` and `HashTests`. These depend on Mathlib at most, and
-   follow CSLib's conventions so that they could be upstreamed. `scripts/check_layers.py` checks
-   that Layer 1 imports nothing else.
+1. **Core specifications**: `Hash` and `HashTests`, in the package `hash-specs` at the repository
+   root. These depend on Mathlib at most, and follow CSLib's conventions so that they could be
+   upstreamed. `scripts/check_layers.py` checks that Layer 1 imports nothing else.
 2. **ZK integration**: `HashZK`, which may also use CompPoly.
 3. **Tooling**: `HashFFI` (C exports), `HashKAT` (full test suites), `harness/` (Rust),
    `docs/` (diagrams and research notes).
+
+Layers 2 and 3's Lean libraries form the package `hash-specs-zk` in `zk/`. It requires the core
+package by path and CompPoly, and shares the core package's `.lake/packages`, so keep its Mathlib
+pin (`zk/lakefile.toml`) and toolchain (`zk/lean-toolchain`) equal to the core package's.
+Downstream projects that need only the core specifications require `hash-specs` and never fetch
+CompPoly.
 
 Within Layer 1, files that do not need Mathlib must not import it. This includes the prelude, and
 the reference and fast specifications of the byte-oriented hashes. That keeps the C-export library
@@ -94,8 +101,8 @@ reference repository and commit, and generation script.
 
 - **`HashTests/`** (Layer 1): a small representative set of known answers, checked with
   `decide +kernel`, so they are proofs and could go upstream with the library.
-- **`HashKAT/`** (Layer 3): the full official suites (NIST CAVP and the designers' vectors),
-  vendored under `HashKAT/vectors/` with a provenance and licence record for each file.
+- **`zk/HashKAT/`** (Layer 3): the full official suites (NIST CAVP and the designers' vectors),
+  vendored under `zk/HashKAT/vectors/` with a provenance and licence record for each file.
 - **`harness/`** (Layer 3): property tests and coverage-guided fuzzing against at least two
   independent implementations per hash. Any divergence becomes a regression test, plus an issue
   recording which side was wrong according to the standard.

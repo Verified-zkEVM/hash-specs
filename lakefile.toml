@@ -25,13 +25,6 @@ name = "mathlib"
 scope = "leanprover-community"
 rev = "v4.34.0"
 
-# Layer 2 only (`HashZK`). The toolchain matches CompPoly's, so its prebuilt release
-# oleans are used (ROADMAP.md §2.1).
-[[require]]
-name = "CompPoly"
-git = "https://github.com/Verified-zkEVM/CompPoly"
-rev = "v4.34.0-patch2"
-
 # Layer 1: the core specifications. Mathlib-only; see `scripts/check_layers.py`.
 [[lean_lib]]
 name = "Hash"
@@ -40,26 +33,3 @@ name = "Hash"
 [[lean_lib]]
 name = "HashTests"
 globs = ["HashTests.+"]
-
-# Layer 2: CompPoly-backed fast field arithmetic for the ZK-friendly hashes (Phase 4).
-[[lean_lib]]
-name = "HashZK"
-
-# Layer 2 tests: the axiom audit of the Layer 2 theorems.
-[[lean_lib]]
-name = "HashZKTests"
-globs = ["HashZKTests.+"]
-
-# Layer 3: C-ABI entry points used by the Rust differential-testing harness.
-[[lean_lib]]
-name = "HashFFI"
-defaultFacets = ["static"]
-
-# Layer 3: runner for the full official known-answer test suites.
-[[lean_lib]]
-name = "HashKAT"
-globs = ["HashKAT.+"]
-
-[[lean_exe]]
-name = "hash-kat"
-root = "HashKAT.Main"

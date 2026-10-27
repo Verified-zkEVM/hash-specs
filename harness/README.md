@@ -4,7 +4,7 @@ This Cargo workspace links the fast Lean specifications into Rust in-process and
 with independent implementations (ROADMAP.md §4).
 
 - `hash-lean/`: the bindings. `build.rs` runs `lake build HashFFI:static Hash:static
-  HashZK:static` and builds CompPoly's zero-import Montgomery arithmetic (skip with
+  HashZK:static` in the `zk` package (`zk/`) and builds CompPoly's zero-import Montgomery arithmetic (skip with
   `HASH_LEAN_SKIP_LAKE=1`), and links the Lean static libraries and runtime. A small C shim
   (`csrc/shim.c`) wraps the `static inline` helpers of `lean.h`. Each hash is a safe function
   `fn(&[u8]) -> Vec<u8>`; streaming interfaces are exposed as functions that absorb a message

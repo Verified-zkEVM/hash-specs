@@ -200,12 +200,12 @@ S-box and its inverse exponent), `Grain.lean` (the Grain LFSR), `Primes.lean` (`
 the field sponges, and `FieldSpongeLemmas.lean` proves `absorb_append` and that the sponges
 commute with maps (`map_paddingFree`, `map_truncatedPermutation`, `map_onList`).
 
-**Layer 2.** `HashZK/Poseidon2.lean` runs the instances on CompPoly's Montgomery fields
+**Layer 2.** `zk/HashZK/Poseidon2.lean` runs the instances on CompPoly's Montgomery fields
 (`BabyBear.Fast.Field`, `KoalaBear.Fast.Field`, and the BN254 scalar field) as
-`HashZK.Poseidon2.babyBear16` … `hlBn254`. `HashZK/Raw/Poseidon2.lean` runs them on raw field
+`HashZK.Poseidon2.babyBear16` … `hlBn254`. `zk/HashZK/Raw/Poseidon2.lean` runs them on raw field
 representations, on states of natural numbers, together with the sponge and compression; these
-are what the C exports of `HashFFI/Poseidon2.lean` (`hs_poseidon2`, `hs_poseidon2_sponge`,
-`hs_poseidon2_compress`) call. `HashZK/Raw/Poseidon2Equiv.lean` proves them equal to the
+are what the C exports of `zk/HashFFI/Poseidon2.lean` (`hs_poseidon2`, `hs_poseidon2_sponge`,
+`hs_poseidon2_compress`) call. `zk/HashZK/Raw/Poseidon2Equiv.lean` proves them equal to the
 specifications.
 
 **Main theorems** (namespace `Hash.ZK.Poseidon2` unless stated):
@@ -225,13 +225,13 @@ specifications.
 **Scope of the guarantees.**
 
 - The proofs cover the permutation, sponge and compression on field elements. The byte encoding
-  of the C exports (`HashFFI/Poseidon2.lean`) is not proved; it is exercised by the differential
+  of the C exports (`zk/HashFFI/Poseidon2.lean`) is not proved; it is exercised by the differential
   tests and fuzzing in `harness/`.
 - The round constants are definitions (the Grain output), not tables proved equal to published
   ones; agreement with the implementations rests on the known-answer and differential tests.
 - Only the instances above are covered: not the width-4 external matrix, Plonky3's width-32
   instances, HorizenLabs' other instances, or Plonky3 releases before the KoalaBear fix.
-- The theorems above are audited in `HashTests/Axioms.lean` and `HashZKTests/Axioms.lean`.
+- The theorems above are audited in `HashTests/Axioms.lean` and `zk/HashZKTests/Axioms.lean`.
 
 ## References
 
@@ -248,5 +248,5 @@ specifications.
 - **[HorizenLabs]** HorizenLabs. The Poseidon2 reference implementation and parameter script,
   commit 055bde3f, published as the `zkhash` crate. <https://github.com/HorizenLabs/poseidon2>
 - **[Plonky3]** Plonky3 0.8.0. <https://github.com/Plonky3/Plonky3>
-- The known-answer vectors, `HashKAT/vectors/poseidon2/kats.json`, with their provenance in
-  `HashKAT/vectors/README.md`.
+- The known-answer vectors, `zk/HashKAT/vectors/poseidon2/kats.json`, with their provenance in
+  `zk/HashKAT/vectors/README.md`.

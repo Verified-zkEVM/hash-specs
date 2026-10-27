@@ -1,0 +1,64 @@
+# The ZK integration and tooling package (ROADMAP.md §2.1): Layer 2 (`HashZK`, CompPoly-backed
+# fast fields for the ZK-friendly hashes) and Layer 3 (`HashFFI`, the C exports used by
+# `harness/`; `HashKAT`, the full known-answer test suites). It depends on the core package
+# `hash-specs` in the parent directory, which needs only Mathlib, so that downstream projects
+# wanting only the core specifications do not fetch CompPoly.
+name = "hash-specs-zk"
+version = "0.1.0"
+defaultTargets = ["HashZK", "HashZKTests"]
+# Share the core package's dependency checkouts (the pins are the same) instead of a second copy
+# of Mathlib.
+packagesDir = "../.lake/packages"
+
+# The same options as the core package.
+[leanOptions]
+autoImplicit = false
+relaxedAutoImplicit = false
+pp.unicode.fun = true
+weak.linter.mathlibStandardSet = true
+weak.linter.flexible = true
+weak.linter.pythonStyle = false
+weak.linter.checkInitImports = false
+weak.linter.allScriptsDocumented = false
+weak.linter.unicodeLinter = false
+weak.linter.style.longFile = 1500
+
+# Mathlib comes first so that its dependency pins win over those of later requirements. Keep the
+# pin equal to the core package's.
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.34.0"
+
+[[require]]
+name = "hash-specs"
+path = ".."
+
+# The toolchain matches CompPoly's, so its prebuilt release oleans are used (ROADMAP.md §2.1).
+[[require]]
+name = "CompPoly"
+git = "https://github.com/Verified-zkEVM/CompPoly"
+rev = "v4.34.0-patch2"
+
+# Layer 2: CompPoly-backed fast field arithmetic for the ZK-friendly hashes.
+[[lean_lib]]
+name = "HashZK"
+
+# Layer 2 tests: the axiom audit of the Layer 2 theorems.
+[[lean_lib]]
+name = "HashZKTests"
+globs = ["HashZKTests.+"]
+
+# Layer 3: C-ABI entry points used by the Rust differential-testing harness.
+[[lean_lib]]
+name = "HashFFI"
+defaultFacets = ["static"]
+
+# Layer 3: runner for the full official known-answer test suites.
+[[lean_lib]]
+name = "HashKAT"
+globs = ["HashKAT.+"]
+
+[[lean_exe]]
+name = "hash-kat"
+root = "HashKAT.Main"

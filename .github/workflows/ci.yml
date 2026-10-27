@@ -10,7 +10,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Layer 1: build with warnings as errors, kernel-checked tests, axiom audit, linters, layering.
+  # Both packages: build with warnings as errors, kernel-checked tests, axiom audit, linters,
+  # layering, and the full known-answer test suites.
   lean:
     runs-on: ubuntu-latest
     steps:
@@ -23,8 +24,6 @@ jobs:
           build: false
           test: false
           lint: false
-      - name: Layering and hygiene
-        run: python3 scripts/check_layers.py
       - name: Build Hash (warnings are errors)
         run: lake build --wfail Hash
       - name: Tests and axiom audit
@@ -37,9 +36,15 @@ jobs:
           lake build --wfail HashTests
       - name: Environment linters
         run: lake lint
-      - name: Build the other Lean libraries
+      # The `zk` package (Layers 2 and 3) depends on the core package and CompPoly, and shares
+      # the core package's dependency checkouts.
+      - name: Build the zk package
+        working-directory: zk
         run: lake build --wfail HashZK HashZKTests HashFFI hash-kat
+      - name: Layering and hygiene
+        run: python3 scripts/check_layers.py
       - name: Full known-answer test suites
+        working-directory: zk
         run: lake exe hash-kat
 
   # Layer 3: differential tests against independent implementations, plus a fuzzing smoke run.
@@ -56,6 +61,7 @@ jobs:
           test: false
           lint: false
       - name: Build the Lean static libraries
+        working-directory: zk
         run: lake build HashFFI:static Hash:static HashZK:static +CompPoly.Fields.Montgomery.Native64x8Defs:o
       - uses: dtolnay/rust-toolchain@stable
       - name: Differential tests

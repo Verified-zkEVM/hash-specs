@@ -220,12 +220,12 @@ circomlib's one-shot hash.
 
 | File | Contents |
 |------|----------|
-| `HashZK/Poseidon/Circom.lean` | circomlib's Poseidon over `BN254.Fast.ScalarField` (`Fr`), with the parameters of each width derived once on first use (`paramsCache`); `poseidonEx`, `poseidon`; `permutation_eq`, `poseidon_eq` through the ring isomorphism `toZMod`. |
-| `HashZK/Raw/BN254.lean` | The BN254 scalar field on raw Montgomery limbs (`Fr`, `toNat`, `ofNat`), with inverse $x^{p-2}$; no Mathlib in its import closure. |
-| `HashZK/Raw/Poseidon.lean` | circomlib's Poseidon on raw limbs: `paramsCache`, `initState`, `poseidon`, and `poseidonNat` on natural numbers (inputs reduced modulo $p$). |
-| `HashZK/Raw/Equiv.lean` | `toRaw`, `hom_toRaw`, `toNat_toRaw` and `poseidonNat_eq`. |
+| `zk/HashZK/Poseidon/Circom.lean` | circomlib's Poseidon over `BN254.Fast.ScalarField` (`Fr`), with the parameters of each width derived once on first use (`paramsCache`); `poseidonEx`, `poseidon`; `permutation_eq`, `poseidon_eq` through the ring isomorphism `toZMod`. |
+| `zk/HashZK/Raw/BN254.lean` | The BN254 scalar field on raw Montgomery limbs (`Fr`, `toNat`, `ofNat`), with inverse $x^{p-2}$; no Mathlib in its import closure. |
+| `zk/HashZK/Raw/Poseidon.lean` | circomlib's Poseidon on raw limbs: `paramsCache`, `initState`, `poseidon`, and `poseidonNat` on natural numbers (inputs reduced modulo $p$). |
+| `zk/HashZK/Raw/Equiv.lean` | `toRaw`, `hom_toRaw`, `toNat_toRaw` and `poseidonNat_eq`. |
 
-The C entry point `hs_poseidon_circom` (`HashFFI/Poseidon.lean`) takes one to sixteen 32-byte
+The C entry point `hs_poseidon_circom` (`zk/HashFFI/Poseidon.lean`) takes one to sixteen 32-byte
 big-endian integers and calls `HashZK.Raw.Poseidon.poseidonNat`.
 
 **Main theorems** (namespace `Hash.ZK` unless stated):
@@ -251,7 +251,7 @@ big-endian integers and calls `HashZK.Raw.Poseidon.poseidonNat`.
 - `partialRounds` is defined only for $t = 2, \dots, 17$ (it returns 0 otherwise), so
   `Circom.poseidon n` is circomlib's only for $n = 1, \dots, 16$.
 - The byte encoding of the C export (`HashFFI.poseidonCircom`) is not proved; the harness tests it.
-- The theorems above are audited in `HashTests/Axioms.lean` and `HashZKTests/Axioms.lean`.
+- The theorems above are audited in `HashTests/Axioms.lean` and `zk/HashZKTests/Axioms.lean`.
 
 ## References
 
@@ -268,5 +268,5 @@ big-endian integers and calls `HashZK.Raw.Poseidon.poseidonNat`.
   commit 208b5a16. <https://extgit.iaik.tugraz.at/krypto/hadeshash>
 - **[circomlib]** iden3, `circuits/poseidon.circom` and `circomlibjs/src/poseidon_reference.js`,
   commits 35e54ea2 and 48b3ab37. <https://github.com/iden3/circomlib>
-- **[KAT]** The known-answer vectors, `HashKAT/vectors/poseidon/circomlib-bn254.json`, with their
-  provenance in `HashKAT/vectors/README.md`.
+- **[KAT]** The known-answer vectors, `zk/HashKAT/vectors/poseidon/circomlib-bn254.json`, with their
+  provenance in `zk/HashKAT/vectors/README.md`.
