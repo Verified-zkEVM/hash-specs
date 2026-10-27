@@ -54,8 +54,8 @@ External Lean specs to cite, and possibly bridge to later:
 
 | Component | Pin / fact |
 |---|---|
-| Lean | We use **`v4.34.0`**, matching CompPoly, so that CompPoly's prebuilt release oleans and the Mathlib cache both work. (Latest stable is `v4.34.1`; `v4.35.0` is at rc4.) |
-| CompPoly | Latest tag `v4.34.0-patch2` (no `v4.34.1` tag yet), `fixedToolchain := true`. Fields include BN254, BLS12-381/377, BabyBear (+Ext4), KoalaBear, Goldilocks, Mersenne31, Pasta, Secp256k1. Each field has `Basic` and `Fast` representations. |
+| Lean | We use **`v4.35.0`** (since 2026-10-27; `v4.34.0` before), matching CompPoly, so that CompPoly's prebuilt release oleans and the Mathlib cache both work. (`v4.35.0` is the latest stable; `v4.36.0` is at rc1.) |
+| CompPoly | Tag `v4.35.0` (`v4.34.0-patch2` before 2026-10-27), `fixedToolchain := true`. Fields include BN254, BLS12-381/377, BabyBear (+Ext4), KoalaBear, Goldilocks, Mersenne31, Pasta, Secp256k1. Each field has `Basic` and `Fast` representations. |
 | ArkLib | Lean `v4.34.0` |
 | Lean module system | The org uses `module` / `public section` / `@[expose]` throughout. |
 | CSLib | `leanprover/cslib`, Apache-2.0. Toolchain `v4.35.0-rc4` (it tracks Lean closely), Mathlib pinned to a commit, **no other direct dependencies**; adding dependencies is "managed carefully" (`DECISION_MAKING.md`). Has a `Cslib/Crypto/` area (`Primitives/PRG`, `Protocols/…`) whose README plans "a comprehensive library of primitives … together with their proofs of correctness". Conventions: every file imports `Cslib.Init`; module system; Mathlib style plus `CODESTYLE.md` (term-mode `def`s, readable proofs, no non-terminal `simp`, curated `grind` sets as API); `lake build --wfail`; `lake shake`; `mk_all`; root `references.bib`; PR titles `feat(...)`; AI-tool use must be disclosed in PRs; major developments discussed on Zulip first. |
@@ -65,9 +65,9 @@ External Lean specs to cite, and possibly bridge to later:
 ## 2. Architecture
 
 ### 2.1 Toolchain and packaging
-- **Toolchain:** `leanprover/lean4:v4.34.0`, matching CompPoly's `v4.34.0-patch2` tag (which sets `fixedToolchain := true`), with Mathlib `v4.34.0`. With matching toolchains, CompPoly's prebuilt release oleans are fetched instead of built (about 7 seconds instead of an hour), and Mathlib comes from `lake exe cache get`.
+- **Toolchain:** `leanprover/lean4:v4.35.0` with CompPoly `v4.35.0` and Mathlib `v4.35.0` since 2026-10-27. Originally `leanprover/lean4:v4.34.0`, matching CompPoly's `v4.34.0-patch2` tag (which sets `fixedToolchain := true`), with Mathlib `v4.34.0`. With matching toolchains, CompPoly's prebuilt release oleans are fetched instead of built (about 7 seconds instead of an hour), and Mathlib comes from `lake exe cache get`.
   - We first tried `v4.34.1`. It works, but CompPoly then has to be built from source, because oleans only load under the exact Lean version that built them. We moved to `v4.34.0` to keep fresh clones and CI fast.
-  - Thereafter, move in lockstep with CompPoly's toolchain bumps, and tag our releases per toolchain (`v4.34.0`, `v4.34.0-patch1`, …), as CompPoly does.
+  - Thereafter, move in lockstep with CompPoly's toolchain bumps, and tag our releases per toolchain (`v4.35.0`, `v4.35.0-patch1`, …), as CompPoly does. `.github/workflows/release.yml` tags and releases each push to `main` that changes `lean-toolchain`; patch releases are made by hand. Both packages' `lean-toolchain` and Mathlib pins must agree (`scripts/check_layers.py` checks this).
 - **Three layers, as separate Lake libraries in one package.** This is how one repo serves both Verified-zkEVM and a possible CSLib upstream:
 
   | Layer | Lake library | May depend on | Contents | Possible destination |

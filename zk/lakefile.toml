@@ -28,7 +28,7 @@ weak.linter.style.longFile = 1500
 [[require]]
 name = "mathlib"
 scope = "leanprover-community"
-rev = "v4.34.0"
+rev = "v4.35.0"
 
 [[require]]
 name = "hash-specs"
@@ -38,7 +38,7 @@ path = ".."
 [[require]]
 name = "CompPoly"
 git = "https://github.com/Verified-zkEVM/CompPoly"
-rev = "v4.34.0-patch2"
+rev = "v4.35.0"
 
 # Layer 2: CompPoly-backed fast field arithmetic for the ZK-friendly hashes.
 [[lean_lib]]
