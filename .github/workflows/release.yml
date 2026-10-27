@@ -1,0 +1,25 @@
+name: Lean release tag
+
+# Each toolchain bump on `main` gets a release named after the toolchain (for example `v4.35.0`),
+# as CompPoly does, so downstream projects can pin `rev = "v4.35.0"`. Later fixes on the same
+# toolchain are released by hand as `v4.35.0-patch1`, `v4.35.0-patch2`, ….
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - lean-toolchain
+
+jobs:
+  lean-release-tag:
+    name: Add Lean release tag
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # Tags the commit that changed `lean-toolchain` with the toolchain version and creates a
+      # GitHub release for it; does nothing if the tag already exists.
+      - uses: leanprover-community/lean-release-tag@v1
+        with:
+          do-release: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
