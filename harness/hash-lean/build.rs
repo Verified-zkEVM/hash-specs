@@ -69,6 +69,9 @@ fn main() {
         "hash_comppoly",
         "Init",
         "leanrt",
+        // Since Lean v4.36.0 the runtime holds the CaDiCaL bindings and needs `libcadical.a`,
+        // as in `leanc --print-ldflags`.
+        "cadical",
         "uv",
         "gmp",
     ];
