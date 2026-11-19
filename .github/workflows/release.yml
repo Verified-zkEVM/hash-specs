@@ -1,8 +1,8 @@
 name: Lean release tag and prebuilt oleans
 
-# Each toolchain bump on `main` gets a release named after the toolchain (for example `v4.35.0`),
-# as CompPoly does, so downstream projects can pin `rev = "v4.35.0"`. Later fixes on the same
-# toolchain are released by hand as `v4.35.0-patch1`, `v4.35.0-patch2`, ….
+# Each toolchain bump on `main` gets a release named after the toolchain (for example `v4.36.0`),
+# as CompPoly does, so downstream projects can pin `rev = "v4.36.0"`. Later fixes on the same
+# toolchain are released by hand as `v4.36.0-patch1`, `v4.36.0-patch2`, ….
 #
 # Every release then gets the prebuilt oleans of both packages, which Lake fetches for a
 # dependency pinned to a release tag (`preferReleaseBuild` in both lakefiles):
